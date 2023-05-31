@@ -89,15 +89,6 @@ const FabricCanvas: React.FC = () => {
       oImg.on('selected', (event) => {
         oImg.opacity = 0.5;
         console.log('imgInstance selected',event);
-        // const value = sessionStorage.getItem((oImg.cacheKey || ''));
-        // if(value){
-        //   setDialog({
-        //     show:true, 
-        //     value: value,
-        //     top:((oImg.top || 0) - (oImg.height || 0)), 
-        //     left:(oImg.left || 0) + (oImg.width || 0)
-        //   });
-        // }
         setCurrentSelect(oImg);
       });
   
@@ -105,6 +96,12 @@ const FabricCanvas: React.FC = () => {
         oImg.opacity = 1;
         console.log('imgInstance deselected',event.e);
       });
+
+      oImg.on('moving',()=>{
+        const input =  document.getElementById('comment_input') as HTMLElement;
+        input.style.left = `${(oImg.left || 0) + (oImg.width || 0)}px`;
+        input.style.top = `${((oImg.top || 0) - (oImg.height || 0))}px`;
+      })
 
     });
   }
@@ -166,7 +163,7 @@ const FabricCanvas: React.FC = () => {
       canvas.on('mouse:down:before', handleBeforeMousedown);
 
       canvas.on('mouse:down', handleMousedown);
-      
+
       return () => {
         // Clean up resources, if necessary
         canvas.off('mouse:down:before', handleBeforeMousedown);
