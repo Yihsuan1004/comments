@@ -89,25 +89,38 @@ const FabricCanvas: React.FC = () => {
       setCommentCreated(true);
       setCurrentSelect(oImg);
 
-
-      oImg.on('mousedown', (event) => {
-        console.log('mousedown',oImg);
-        if(oImg.isFirstSelected) {
+      oImg.on('mouseup', (event) => {  
+        console.log('mouseup',oImg.isFirstSelected);
+      
+        if(oImg.isFirstSelected && !oImg.isMoved) {
           //reset value
           oImg.isFirstSelected = false;
           return;
         }
 
-        const target = event.target as fabric.Image;
-        if(target.cacheKey){
+        const target = event.target as CustomImage;
+        
+        if(oImg.cacheKey){
+          if(oImg.isMoved){
+            oImg.isMoved = false;
+            setDialog({
+              show: dialogRef.current.show,
+              comments: dialogRef.current.comments,
+              top:((oImg.top || 0) - (oImg.height || 0)), 
+              left:(oImg.left || 0) + (oImg.width || 0),
+              cacheKey: target.cacheKey
+            });
+          }
 
-          setDialog({
-            ...dialog,
-            show: !dialogRef.current.show,
-            top:((oImg.top || 0) - (oImg.height || 0)), 
-            left:(oImg.left || 0) + (oImg.width || 0),
-            cacheKey: target.cacheKey
-          });
+          else{
+            setDialog({
+              show: !dialogRef.current.show,
+              comments: dialogRef.current.comments,
+              top:((oImg.top || 0) - (oImg.height || 0)), 
+              left:(oImg.left || 0) + (oImg.width || 0),
+              cacheKey: target.cacheKey
+            });
+          }
         }
       });
 
@@ -122,7 +135,6 @@ const FabricCanvas: React.FC = () => {
           setCompleted(true);
           setCommentCreated(true);
           const comments  = JSON.parse(sessionStorage.getItem(target.cacheKey) || "[]");
-          console.log('session',comments);
 
           setDialog({
             show: true,
@@ -131,9 +143,6 @@ const FabricCanvas: React.FC = () => {
             left:(oImg.left || 0) + (oImg.width || 0),
             cacheKey: target.cacheKey
           });
-
-          console.log('dialog value',dialogRef.current);
-
         }
         setCurrentSelect(oImg);
       });
@@ -156,12 +165,13 @@ const FabricCanvas: React.FC = () => {
 
       });
 
-
       oImg.on('moving',()=>{
         const input =  document.getElementById('comment_input') as HTMLElement;
         if(!input || isComplete) return;
         input.style.left = `${(oImg.left || 0) + (oImg.width || 0)}px`;
         input.style.top = `${((oImg.top || 0) - (oImg.height || 0))}px`;
+        oImg.isMoved = true;
+        console.log('moving');
       })
 
     });
@@ -198,6 +208,10 @@ const FabricCanvas: React.FC = () => {
       if(event.code === 'Enter' && comment.value !== ''){
         inputElement.remove();
         createCommentThread(oImg,comment);
+      }
+
+      if(event.code === 'Escape' ){
+        removeObject(oImg);
       }
     });
   }

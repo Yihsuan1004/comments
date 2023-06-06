@@ -50,8 +50,8 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,comments,cacheKey}) => 
   return (
     <div style={style}>
       {
-        comments &&
-        comments.map((comment,index) =>(
+        thread &&
+        thread.map((comment,index) =>(
           <div key={index}>My Comment:{comment.value}</div>
         ))
       }
