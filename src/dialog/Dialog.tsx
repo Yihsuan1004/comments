@@ -2,7 +2,7 @@ import React, { useEffect, useState, CSSProperties, ChangeEvent } from 'react';
 import { DialogProps, Comment } from '../interface';
 
 
-const Dialog: React.FC<DialogProps> = ({onClose,top,left,value}) => {
+const Dialog: React.FC<DialogProps> = ({onClose,top,left,value,cacheKey}) => {
 
   const style: CSSProperties = {
     position: 'absolute',
@@ -19,6 +19,13 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,value}) => {
  
   const onAddComment = () => {
     const input = document.getElementById('comment_input') as HTMLInputElement;
+
+    if(cacheKey){
+      let currentVal : Comment[] = JSON.parse(sessionStorage.getItem(cacheKey) || "");
+      const updateVal = JSON.stringify([...currentVal, {  value:input.value }]);
+      sessionStorage.setItem(cacheKey, updateVal);
+    }
+    
     setComments([
       ...comments,
       {

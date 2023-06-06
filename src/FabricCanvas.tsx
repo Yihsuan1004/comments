@@ -98,13 +98,15 @@ const FabricCanvas: React.FC = () => {
           return;
         }
 
-        if((event.target as fabric.Image).cacheKey){
+        const target = event.target as fabric.Image;
+        if(target.cacheKey){
 
           setDialog({
             show: !dialogRef.current.show,
             value,
             top:((oImg.top || 0) - (oImg.height || 0)), 
-            left:(oImg.left || 0) + (oImg.width || 0)
+            left:(oImg.left || 0) + (oImg.width || 0),
+            cacheKey: target.cacheKey
           });
         }
       });
@@ -122,12 +124,12 @@ const FabricCanvas: React.FC = () => {
           const value  = sessionStorage.getItem(target.cacheKey) || "";
           console.log('session',value);
 
-          //待處理：無法即時更新value
           setDialog({
             show: true,
             value: value,
             top:((oImg.top || 0) - (oImg.height || 0)), 
-            left:(oImg.left || 0) + (oImg.width || 0)
+            left:(oImg.left || 0) + (oImg.width || 0),
+            cacheKey: target.cacheKey
           });
 
           console.log('dialog value',dialogRef.current);
@@ -190,7 +192,7 @@ const FabricCanvas: React.FC = () => {
     }
 
     inputElement.addEventListener('keydown',(event)=>{
-      const val = (event.target as HTMLInputElement).value;
+      const val = (event.target as HTMLInputElement).value ;
       if(event.code === 'Enter' && val !== ''){
         inputElement.remove();
         createCommentThread(oImg,val);
@@ -200,12 +202,17 @@ const FabricCanvas: React.FC = () => {
 
   const createCommentThread = (oImg:fabric.Image,value: any) =>{
     oImg.cacheKey = generateSerialNumber(); //key to get current comment's val;
-    sessionStorage.setItem(oImg.cacheKey, value);
+
+    const val = JSON.stringify([{value}]);
+
+    sessionStorage.setItem(oImg.cacheKey, val);
+
     setDialog({
       show:true, 
       value,
       top:((oImg.top || 0) - (oImg.height || 0)), 
-      left:(oImg.left || 0) + (oImg.width || 0)
+      left:(oImg.left || 0) + (oImg.width || 0),
+      cacheKey: oImg.cacheKey
     });
     setCompleted(true);
   }
@@ -262,7 +269,7 @@ const FabricCanvas: React.FC = () => {
     }
   }, []);
 
-  const {show , value , top , left} = dialog;
+  const {show ,cacheKey, value , top , left,} = dialog;
   
   return (
     <>
@@ -275,6 +282,7 @@ const FabricCanvas: React.FC = () => {
                   top = {top} 
                   left = {left}
                   value = {value}
+                  cacheKey={cacheKey}
           />
         }
       </div>
