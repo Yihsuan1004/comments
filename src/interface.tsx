@@ -2,7 +2,7 @@
 export interface DialogConfig{
   show: boolean,
   cacheKey?: string
-  value?: string;
+  comments?: Comment[] | []
   top?: number,
   left?: number,
 }
@@ -11,7 +11,7 @@ export interface DialogProps{
   onClose: () => void,
   top: number | undefined,
   left: number |  undefined,
-  value: string |  undefined,
+  comments?: Comment[] | [],
   cacheKey: string |  undefined,
 }
 

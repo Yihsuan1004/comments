@@ -2,7 +2,7 @@ import React, { useEffect, useState, CSSProperties, ChangeEvent } from 'react';
 import { DialogProps, Comment } from '../interface';
 
 
-const Dialog: React.FC<DialogProps> = ({onClose,top,left,value,cacheKey}) => {
+const Dialog: React.FC<DialogProps> = ({onClose,top,left,comments,cacheKey}) => {
 
   const style: CSSProperties = {
     position: 'absolute',
@@ -10,12 +10,12 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,value,cacheKey}) => {
     left: (left || 0)
   };
 
-  const [comments,setComments] = useState<Comment[]>([{ value }]);
+  const [thread,setThread] = useState<DialogProps["comments"]>(comments || []);
   const [disabled,setDisabled] = useState(true);
 
   useEffect(() => {
-    setComments([{ value }]);
-  }, [value]);
+    setThread(comments || []);
+  }, [comments]);
  
   const onAddComment = () => {
     const input = document.getElementById('comment_input') as HTMLInputElement;
@@ -26,8 +26,8 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,value,cacheKey}) => {
       sessionStorage.setItem(cacheKey, updateVal);
     }
     
-    setComments([
-      ...comments,
+    setThread([
+      ...(thread || []),
       {
         value:input.value
       }
@@ -50,6 +50,7 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,value,cacheKey}) => {
   return (
     <div style={style}>
       {
+        comments &&
         comments.map((comment,index) =>(
           <div key={index}>My Comment:{comment.value}</div>
         ))

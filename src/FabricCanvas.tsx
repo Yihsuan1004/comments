@@ -2,14 +2,14 @@ import React, { useRef, useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 import './FabricCanvas.css';
 import Dialog from './dialog/Dialog';
-import { DialogConfig } from './interface';
+import { Comment, DialogConfig } from './interface';
 import { CustomImage } from './class';
 
 
 const FabricCanvas: React.FC = () => {
 
 
-  const [dialog, setDialog] = useState<DialogConfig>({show: false});
+  const [dialog, setDialog] = useState<DialogConfig>({ show: false});
   const [isCommentCreated, setCommentCreated] = useState<boolean>(false);
   const [isComplete, setCompleted] = useState<boolean>(false);
   const [currentSelect, setCurrentSelect] = useState<fabric.Object | null>(null);
@@ -102,8 +102,8 @@ const FabricCanvas: React.FC = () => {
         if(target.cacheKey){
 
           setDialog({
+            ...dialog,
             show: !dialogRef.current.show,
-            value,
             top:((oImg.top || 0) - (oImg.height || 0)), 
             left:(oImg.left || 0) + (oImg.width || 0),
             cacheKey: target.cacheKey
@@ -121,12 +121,12 @@ const FabricCanvas: React.FC = () => {
         if(target.cacheKey){
           setCompleted(true);
           setCommentCreated(true);
-          const value  = sessionStorage.getItem(target.cacheKey) || "";
-          console.log('session',value);
+          const comments  = JSON.parse(sessionStorage.getItem(target.cacheKey) || "[]");
+          console.log('session',comments);
 
           setDialog({
             show: true,
-            value: value,
+            comments: comments,
             top:((oImg.top || 0) - (oImg.height || 0)), 
             left:(oImg.left || 0) + (oImg.width || 0),
             cacheKey: target.cacheKey
@@ -151,8 +151,7 @@ const FabricCanvas: React.FC = () => {
         
         setDialog({
           ...dialog,
-          show: false,
-          value: ""
+          show: false
         });
 
       });
@@ -192,24 +191,27 @@ const FabricCanvas: React.FC = () => {
     }
 
     inputElement.addEventListener('keydown',(event)=>{
-      const val = (event.target as HTMLInputElement).value ;
-      if(event.code === 'Enter' && val !== ''){
+      const comment : Comment = {
+        value: (event.target as HTMLInputElement).value
+      } ;
+
+      if(event.code === 'Enter' && comment.value !== ''){
         inputElement.remove();
-        createCommentThread(oImg,val);
+        createCommentThread(oImg,comment);
       }
     });
   }
 
-  const createCommentThread = (oImg:fabric.Image,value: any) =>{
+  const createCommentThread = (oImg:fabric.Image,comment: Comment) =>{
     oImg.cacheKey = generateSerialNumber(); //key to get current comment's val;
 
-    const val = JSON.stringify([{value}]);
+    const val = JSON.stringify([comment]);
 
     sessionStorage.setItem(oImg.cacheKey, val);
 
     setDialog({
       show:true, 
-      value,
+      comments: [comment],
       top:((oImg.top || 0) - (oImg.height || 0)), 
       left:(oImg.left || 0) + (oImg.width || 0),
       cacheKey: oImg.cacheKey
@@ -269,7 +271,7 @@ const FabricCanvas: React.FC = () => {
     }
   }, []);
 
-  const {show ,cacheKey, value , top , left,} = dialog;
+  const {show ,cacheKey, comments , top , left,} = dialog;
   
   return (
     <>
@@ -281,7 +283,7 @@ const FabricCanvas: React.FC = () => {
           <Dialog onClose = {() => setDialog({...dialog , show: false})} 
                   top = {top} 
                   left = {left}
-                  value = {value}
+                  comments = {comments}
                   cacheKey={cacheKey}
           />
         }
