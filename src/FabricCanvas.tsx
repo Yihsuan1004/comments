@@ -2,14 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 import './FabricCanvas.css';
 import Dialog from './dialog/Dialog';
-
-
-interface DialogConfig{
-  show: boolean,
-  value?: string;
-  top?: number,
-  left?: number
-}
+import { DialogConfig } from './interface';
+import { CustomImage } from './class';
 
 
 const FabricCanvas: React.FC = () => {
@@ -20,13 +14,14 @@ const FabricCanvas: React.FC = () => {
   const [isComplete, setCompleted] = useState<boolean>(false);
   const [currentSelect, setCurrentSelect] = useState<fabric.Object | null>(null);
   const [init,setInit] =  useState<boolean>(false);
+  const [isInsideObject,setInsideObject] =  useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasInstance = useRef<fabric.Canvas | null>(null);
-  const dialogRef = useRef(dialog);
-  const currentSelectRef = useRef(currentSelect);
+  const dialogRef = useRef<DialogConfig>(dialog);
+  const currentSelectRef = useRef<fabric.Object | null>(currentSelect);
+  const insideObjectRef = useRef<boolean>(isInsideObject);
 
-  let isInsideObject = false;
 
   const [counter, setCounter] = useState(1);
 
@@ -37,36 +32,33 @@ const FabricCanvas: React.FC = () => {
   };
 
   const handleBeforeMousedown = (event:fabric.IEvent):void => {
+
     const canvas = canvasInstance.current as fabric.Canvas;
     if (canvas) {
       const target = canvas.findTarget(event.e, false);
+      console.log('target',target);
+
       // Check if the click was inside an object
-      isInsideObject = target !== null && target !== undefined;
+      const isInsideObject = target !== null && target !== undefined;
+      console.log('insideObjectRef',isInsideObject);
+
+      setInsideObject(isInsideObject); // Update the state value
+      insideObjectRef.current = isInsideObject;
     }
   }
 
   const handleMousedown = (event:fabric.IEvent): void => {
-
-    if (isInsideObject) {
-      isInsideObject = false; // Reset the flag
+    if (insideObjectRef.current) {
+      setInsideObject(false); // Reset the flag
       return; // Ignore the event
     }
-
-    console.log('isCommentCreated',isCommentCreated);
-    console.log('isComplete',isComplete);
-    console.log('dialog',dialog.show);
-    console.log('event',event);
 
     const canvas = canvasInstance.current as fabric.Canvas;
     const pointer = canvas.getPointer(event.e);
 
-  
     if(isCommentCreated && !isComplete){
       setCommentCreated(false); // Reset the flag
-
-      console.log('remove');
-      
-      removeObject();
+      removeObject(currentSelect);
       return; // Ignore the event
     }
     
@@ -83,27 +75,31 @@ const FabricCanvas: React.FC = () => {
 
   const createComment = (canvas:fabric.Canvas, pointer: any) => {
 
-    fabric.Image.fromURL('/img/icon_message.svg', function(oImg:fabric.Image) {
+    fabric.Image.fromURL('/img/icon_message.svg', function(oImg:CustomImage) {
       oImg.hasControls = false;
       oImg.hasBorders = false;
       oImg.originY = 'bottom';
       oImg.left = pointer.x;
       oImg.top = pointer.y;
       oImg.cacheKey = "";
-
       canvas.add(oImg);
       canvas.setActiveObject(oImg);
-
 
       createInput(oImg);
       setCommentCreated(true);
       setCurrentSelect(oImg);
 
+
       oImg.on('mousedown', (event) => {
-        console.log('imgInstance mousedown',event);
+        console.log('mousedown',oImg);
+        if(oImg.isFirstSelected) {
+          //reset value
+          oImg.isFirstSelected = false;
+          return;
+        }
 
         if((event.target as fabric.Image).cacheKey){
-          //這個待處理
+
           setDialog({
             show: !dialogRef.current.show,
             value,
@@ -113,43 +109,52 @@ const FabricCanvas: React.FC = () => {
         }
       });
 
+
       oImg.on('selected', (event) => {
-        console.log(currentSelect,'currentSelect');
-
         oImg.opacity = 0.5;
+        oImg.isFirstSelected = true;
         console.log('imgInstance selected',event);
+        const target = event.target as fabric.Image;
 
-        if((event.target as fabric.Image).cacheKey){
+        if(target.cacheKey){
           setCompleted(true);
+          setCommentCreated(true);
+          const value  = sessionStorage.getItem(target.cacheKey) || "";
+          console.log('session',value);
 
-          console.log(event.target);
-
+          //待處理：無法即時更新value
           setDialog({
             show: true,
-            value,
+            value: value,
             top:((oImg.top || 0) - (oImg.height || 0)), 
             left:(oImg.left || 0) + (oImg.width || 0)
           });
-        }
 
+          console.log('dialog value',dialogRef.current);
+
+        }
         setCurrentSelect(oImg);
       });
   
+
       oImg.on('deselected', (event) => {
         oImg.opacity = 1;
+        oImg.isFirstSelected = false;
         console.log('imgInstance deselected',event);
-        console.log('isCommentCreated', isCommentCreated,'isComplete',isComplete);
 
         //待處理
-
+        if(oImg.cacheKey === ""){
+          removeObject(oImg);
+        }
+        
         setDialog({
+          ...dialog,
           show: false,
-          value,
-          top:((oImg.top || 0) - (oImg.height || 0)), 
-          left:(oImg.left || 0) + (oImg.width || 0)
+          value: ""
         });
 
       });
+
 
       oImg.on('moving',()=>{
         const input =  document.getElementById('comment_input') as HTMLElement;
@@ -161,16 +166,13 @@ const FabricCanvas: React.FC = () => {
     });
   }
 
-  const removeObject = () => {
-    if(!currentSelect) return;
-    console.log('currentSelect',currentSelect);
+  const removeObject = (obj: fabric.Object | fabric.Image | null) => {
+    if(!obj) return;
     const input =  document.getElementById('comment_input') as HTMLElement;
     const canvas = canvasInstance.current as fabric.Canvas;
-
-    input.remove();
-    canvas.remove(currentSelect);
+    if(input) input.remove();
+    if(canvas)  canvas.remove(obj);
   }
-
 
   const createInput = (oImg:fabric.Image) => {
     const inputElement = document.createElement('input');
@@ -190,10 +192,6 @@ const FabricCanvas: React.FC = () => {
     inputElement.addEventListener('keydown',(event)=>{
       const val = (event.target as HTMLInputElement).value;
       if(event.code === 'Enter' && val !== ''){
-        console.log('enter');
-        console.log('val', val);
-        // sessionStorage.setItem((oImg.cacheKey || ''),val);
-        console.log('currentSelect',currentSelect);
         inputElement.remove();
         createCommentThread(oImg,val);
       }
@@ -202,26 +200,29 @@ const FabricCanvas: React.FC = () => {
 
   const createCommentThread = (oImg:fabric.Image,value: any) =>{
     oImg.cacheKey = generateSerialNumber(); //key to get current comment's val;
+    sessionStorage.setItem(oImg.cacheKey, value);
     setDialog({
       show:true, 
       value,
       top:((oImg.top || 0) - (oImg.height || 0)), 
       left:(oImg.left || 0) + (oImg.width || 0)
     });
-
     setCompleted(true);
   }
 
   useEffect(() => {
     dialogRef.current = dialog;
-    console.log('update dialogRef', dialogRef.current.show);
   }, [dialog]);
-
 
   useEffect(() => {
     currentSelectRef.current = currentSelect;
   }, [currentSelect]);
 
+  useEffect(() => {
+    insideObjectRef.current = isInsideObject;
+  }, [isInsideObject]);
+
+  
   useEffect(()=>{
     
     if(canvasInstance.current){
@@ -268,7 +269,7 @@ const FabricCanvas: React.FC = () => {
       <div id="canvas-container">
         <canvas ref={canvasRef} />
         {
-          dialog.show 
+          show 
           && 
           <Dialog onClose = {() => setDialog({...dialog , show: false})} 
                   top = {top} 

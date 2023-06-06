@@ -1,15 +1,5 @@
-import React, { useRef, useEffect, useState, CSSProperties, KeyboardEvent, ChangeEvent } from 'react';
-
-interface DialogProps{
-  onClose: () => void,
-  top: number | undefined,
-  left: number |  undefined,
-  value: string |  undefined
-}
-
-interface Comment{
-  value: string |  undefined
-}
+import React, { useEffect, useState, CSSProperties, ChangeEvent } from 'react';
+import { DialogProps, Comment } from '../interface';
 
 
 const Dialog: React.FC<DialogProps> = ({onClose,top,left,value}) => {
@@ -19,11 +9,14 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,value}) => {
     top: (top || 0),
     left: (left || 0)
   };
-  let nextId = 0;
 
-  const [comments,setComments] = useState<Comment[]>([{value}]);
+  const [comments,setComments] = useState<Comment[]>([{ value }]);
   const [disabled,setDisabled] = useState(true);
 
+  useEffect(() => {
+    setComments([{ value }]);
+  }, [value]);
+ 
   const onAddComment = () => {
     const input = document.getElementById('comment_input') as HTMLInputElement;
     setComments([
@@ -45,9 +38,7 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,value}) => {
     }
   }
 
-  useEffect(()=>{
-
-  },[comments,disabled])
+  
 
   return (
     <div style={style}>
