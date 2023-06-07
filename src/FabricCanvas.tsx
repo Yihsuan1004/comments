@@ -95,14 +95,23 @@ const FabricCanvas: React.FC = () => {
 
       oImg.on('mouseup', (event) => {  
         console.log('mouseup',oImg.isFirstSelected);
-      
+        console.log('move',oImg.isMoved);
+
+        const target = event.target as CustomImage;
+
         if(oImg.isFirstSelected && !oImg.isMoved) {
           //reset value
           oImg.isFirstSelected = false;
+          setDialog({
+            show: true,
+            comments: dialogRef.current.comments,
+            top:((oImg.top || 0) - (oImg.height || 0)), 
+            left:(oImg.left || 0) + (oImg.width || 0),
+            cacheKey: target.cacheKey
+          });
           return;
         }
 
-        const target = event.target as CustomImage;
         
         if(oImg.cacheKey){
           if(oImg.isMoved){
@@ -117,6 +126,7 @@ const FabricCanvas: React.FC = () => {
           }
 
           else{
+            console.log('mouseup');
             setDialog({
               show: !dialogRef.current.show,
               comments: dialogRef.current.comments,
@@ -138,10 +148,11 @@ const FabricCanvas: React.FC = () => {
         if(target.cacheKey){
           setCompleted(true);
           setCommentCreated(true);
+
           const comments  = JSON.parse(sessionStorage.getItem(target.cacheKey) || "[]");
 
           setDialog({
-            show: true,
+            show: dialogRef.current.show,
             comments: comments,
             top:((oImg.top || 0) - (oImg.height || 0)), 
             left:(oImg.left || 0) + (oImg.width || 0),
@@ -170,12 +181,15 @@ const FabricCanvas: React.FC = () => {
       });
 
       oImg.on('moving',()=>{
+        
+        oImg.isMoved = true;
+
+        console.log('moving');
+
         const input =  document.getElementById('comment_input') as HTMLElement;
         if(!input || isComplete) return;
         input.style.left = `${(oImg.left || 0) + (oImg.width || 0)}px`;
         input.style.top = `${((oImg.top || 0) - (oImg.height || 0))}px`;
-        oImg.isMoved = true;
-        console.log('moving');
       })
 
     });
@@ -291,8 +305,8 @@ const FabricCanvas: React.FC = () => {
       canvasInstance.current = canvas;
       
       // Add your Fabric.js code here
-      canvas.width = 800;
-      canvas.height = 600;
+      canvas.width = 1400;
+      canvas.height = 800;
       
       // Add event listener to track if the mousedown event is inside an object
       setInit(true);
