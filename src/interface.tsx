@@ -9,6 +9,7 @@ export interface DialogConfig{
 
 export interface DialogProps{
   onClose: () => void,
+  onDelete: () => void,
   top: number | undefined,
   left: number |  undefined,
   comments?: Comment[] | [],
@@ -16,5 +17,7 @@ export interface DialogProps{
 }
 
 export interface Comment{
+  name: string,
   value: string |  undefined
+  time: string
 }

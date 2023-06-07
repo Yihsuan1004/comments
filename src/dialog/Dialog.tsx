@@ -2,7 +2,7 @@ import React, { useEffect, useState, CSSProperties, ChangeEvent } from 'react';
 import { DialogProps, Comment } from '../interface';
 
 
-const Dialog: React.FC<DialogProps> = ({onClose,top,left,comments,cacheKey}) => {
+const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cacheKey}) => {
 
   const style: CSSProperties = {
     position: 'absolute',
@@ -20,17 +20,22 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,comments,cacheKey}) => 
   const onAddComment = () => {
     const input = document.getElementById('comment_input') as HTMLInputElement;
 
+    let updateObj!: Comment;
+
     if(cacheKey){
       let currentVal : Comment[] = JSON.parse(sessionStorage.getItem(cacheKey) || "");
-      const updateVal = JSON.stringify([...currentVal, {  value:input.value }]);
+      updateObj =  {
+        name: "Cielo",
+        value:input.value,
+        time: new Date().toLocaleString()
+      }
+      const updateVal = JSON.stringify([...currentVal,updateObj]);
       sessionStorage.setItem(cacheKey, updateVal);
     }
     
     setThread([
       ...(thread || []),
-      {
-        value:input.value
-      }
+      updateObj
     ]);
     input.value = "";
   }
@@ -52,12 +57,18 @@ const Dialog: React.FC<DialogProps> = ({onClose,top,left,comments,cacheKey}) => 
       {
         thread &&
         thread.map((comment,index) =>(
-          <div key={index}>My Comment:{comment.value}</div>
+          <div key={index}>
+            <div>Comment:{comment.value}</div>
+            <div>name:{comment.name}</div>
+            <div>time:{comment.time}</div>
+          </div>
         ))
       }
       <input id="comment_input" type="text" onChange={(event) => onTypeText(event)}/>
       <button onClick={onAddComment} disabled={disabled}>add</button>
       <button onClick={onClose}>Close</button>
+      <button onClick={onDelete}>Delete</button>
+
     </div>
   );
 };

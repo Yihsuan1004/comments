@@ -6,6 +6,10 @@ import { Comment, DialogConfig } from './interface';
 import { CustomImage } from './class';
 
 
+const User = {
+  name: "Cielo"
+}
+
 const FabricCanvas: React.FC = () => {
 
 
@@ -202,7 +206,9 @@ const FabricCanvas: React.FC = () => {
 
     inputElement.addEventListener('keydown',(event)=>{
       const comment : Comment = {
-        value: (event.target as HTMLInputElement).value
+        name: "Cielo",
+        value: (event.target as HTMLInputElement).value,
+        time: new Date().toLocaleString()
       } ;
 
       if(event.code === 'Enter' && comment.value !== ''){
@@ -232,6 +238,19 @@ const FabricCanvas: React.FC = () => {
     });
     setCompleted(true);
   }
+
+  /** handle delete threads */
+  const handleDelete = () =>{
+    const canvas = canvasInstance.current as fabric.Canvas;
+    const activeObj = canvas.getActiveObject() as CustomImage;
+    if(activeObj) {
+      //delete object from canvas
+      removeObject(activeObj);
+      //clear session data
+      sessionStorage.removeItem(activeObj.cacheKey as string);
+    };
+  }
+
 
   useEffect(() => {
     dialogRef.current = dialog;
@@ -294,7 +313,8 @@ const FabricCanvas: React.FC = () => {
         {
           show 
           && 
-          <Dialog onClose = {() => setDialog({...dialog , show: false})} 
+          <Dialog onDelete = {handleDelete}
+                  onClose = {() => setDialog({...dialog , show: false})} 
                   top = {top} 
                   left = {left}
                   comments = {comments}
