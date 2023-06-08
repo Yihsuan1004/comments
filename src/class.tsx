@@ -6,5 +6,6 @@ export class CustomImage extends fabric.Image {
   isMoved?: boolean;
   imgType?: 'comment' | 'normal';
   collections?: CustomImage[];
+  relationship?: number[];
   // Add your custom methods or overrides here
 }

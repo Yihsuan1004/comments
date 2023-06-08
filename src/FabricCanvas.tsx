@@ -4,6 +4,7 @@ import './FabricCanvas.css';
 import Dialog from './dialog/Dialog';
 import { Comment, DialogConfig } from './interface';
 import { CustomImage } from './class';
+import { Point } from 'fabric/fabric-impl';
 
 
 const User = {
@@ -14,6 +15,7 @@ const FabricCanvas: React.FC = () => {
 
 
   const [dialog, setDialog] = useState<DialogConfig>({ show: false});
+  const [mode, setMode] = useState<string>('move');
   const [isCommentCreated, setCommentCreated] = useState<boolean>(false);
   const [isComplete, setCompleted] = useState<boolean>(false);
   const [currentSelect, setCurrentSelect] = useState<CustomImage | null>(null);
@@ -25,6 +27,7 @@ const FabricCanvas: React.FC = () => {
   const dialogRef = useRef<DialogConfig>(dialog);
   const currentSelectRef = useRef<CustomImage | null>(currentSelect);
   const insideObjectRef = useRef<boolean>(isInsideObject);
+  const modeRef = useRef<string>(mode);
 
 
   const [counter, setCounter] = useState(1);
@@ -36,6 +39,7 @@ const FabricCanvas: React.FC = () => {
   };
 
   const handleBeforeMousedown = (event:fabric.IEvent):void => {
+    if(modeRef.current === 'move') return;
 
     const canvas = canvasInstance.current as fabric.Canvas;
     if (canvas) {
@@ -52,6 +56,10 @@ const FabricCanvas: React.FC = () => {
   }
 
   const handleMousedown = (event:fabric.IEvent): void => {
+    console.log('object click',event.target);
+
+    if(modeRef.current === 'move') return;
+
     if (insideObjectRef.current) {
       setInsideObject(false); // Reset the flag
       return; // Ignore the event
@@ -59,6 +67,8 @@ const FabricCanvas: React.FC = () => {
 
     const canvas = canvasInstance.current as fabric.Canvas;
     const pointer = canvas.getPointer(event.e);
+    console.log('pointer',pointer);
+    console.log('event',event.target);
 
     if(isCommentCreated && !isComplete){
       setCommentCreated(false); // Reset the flag
@@ -73,11 +83,11 @@ const FabricCanvas: React.FC = () => {
     }
 
     // Create a new comment object
-    createComment(canvas,pointer);
+    createComment(canvas,pointer,event);
   }
 
 
-  const createComment = (canvas:fabric.Canvas, pointer: any) => {
+  const createComment = (canvas:fabric.Canvas, pointer: any, event:fabric.IEvent) => {
 
     fabric.Image.fromURL('/img/icon_message.svg', function(oImg:CustomImage) {
       oImg.hasControls = false;
@@ -89,7 +99,7 @@ const FabricCanvas: React.FC = () => {
       canvas.add(oImg);
       canvas.setActiveObject(oImg);
 
-      createInput(oImg);
+      createInput(oImg,event);
       setCommentCreated(true);
       setCurrentSelect(oImg);
 
@@ -98,7 +108,7 @@ const FabricCanvas: React.FC = () => {
         console.log('move',oImg.isMoved);
 
         const target = event.target as CustomImage;
-
+        
         if(oImg.isFirstSelected && !oImg.isMoved) {
           //reset value
           oImg.isFirstSelected = false;
@@ -203,8 +213,10 @@ const FabricCanvas: React.FC = () => {
     if(canvas)  canvas.remove(obj);
   }
 
-  const createInput = (oImg:CustomImage) => {
+  const createInput = (oImg:CustomImage, event: fabric.IEvent) => {
     const inputElement = document.createElement('input');
+    const clickTarget = event.target as CustomImage;
+
     inputElement.id = 'comment_input';
     inputElement.type = 'text';
     inputElement.style.position = 'absolute';
@@ -226,7 +238,11 @@ const FabricCanvas: React.FC = () => {
       } ;
 
       if(event.code === 'Enter' && comment.value !== ''){
+        if(clickTarget){
+          clickTarget.collections?.push(oImg);
+        }
         inputElement.remove();
+
         createCommentThread(oImg,comment);
       }
 
@@ -276,8 +292,67 @@ const FabricCanvas: React.FC = () => {
       oImg.hasBorders = true;
       oImg.imgType = 'normal';
       oImg.collections = [];
+      var invert = fabric.util.invertTransform;
+      var multiply = fabric.util.multiplyTransformMatrices;
+
+      const updateComments = () =>{
+
+        if(!oImg.collections ||  oImg.collections.length === 0) return;
+
+        oImg.collections.forEach(obj =>{
+          if(!obj.relationship) return;
+          var relationship = obj.relationship;
+          var newTransform = multiply(
+            oImg.calcTransformMatrix(),
+            relationship
+          );
+
+          var opt = fabric.util.qrDecompose(newTransform);
+          obj.set({
+            flipX: false,
+            flipY: false,
+          });
+
+          const position = { x: opt.translateX, y: opt.translateY } as Point;
+
+          obj.setPositionByOrigin(
+             position, 
+            'center',
+            'center'
+          )
+          obj.set(opt);
+          obj.setCoords();
+        });
+
+        
+      }
+    
+      let currTransform = oImg.calcTransformMatrix();
+      let invertCurrTransform = invert(currTransform);
+
+      oImg.on('selected',()=>{
+        if((oImg.collections || []).length > 0){
+          console.log('oooo');
+          oImg.collections?.forEach(obj =>{
+            var desiredTransform = multiply(
+              invertCurrTransform,
+              obj.calcTransformMatrix()
+            );
+
+            obj.relationship = desiredTransform;
+          })
+        }
+      })
+
+      oImg.on('moving',updateComments);
+
       canvas.add(oImg);
     });
+  }
+
+  
+  const handleChangeMode = (mode: string) =>{
+    setMode(mode);
   }
 
 
@@ -294,6 +369,22 @@ const FabricCanvas: React.FC = () => {
     insideObjectRef.current = isInsideObject;
   }, [isInsideObject]);
 
+  useEffect(() => {
+    modeRef.current = mode;
+    const canvas = canvasInstance.current;
+    const selectable =  modeRef.current === 'move';
+
+    const imgs = (canvas?.getObjects() as CustomImage[])?.filter(obj => obj.imgType === 'normal') || [];
+
+    console.log(imgs);
+
+    if(imgs.length >0){
+      imgs.forEach(img =>{
+        img.selectable = selectable;
+      });
+    }
+   
+  }, [mode]);
   
   useEffect(()=>{
     
@@ -338,7 +429,6 @@ const FabricCanvas: React.FC = () => {
   return (
     <>
       <div id="canvas-container">
-        <button onClick={addImage}>add Image</button>
         <canvas ref={canvasRef} />
         {
           show 
@@ -351,6 +441,9 @@ const FabricCanvas: React.FC = () => {
                   cacheKey={cacheKey}
           />
         }
+        <button onClick={() => handleChangeMode('move')}>Move mode</button>
+        <button onClick={() => handleChangeMode('comment')}>Comment mode</button>
+        <button onClick={addImage}>add Image</button>
       </div>
     </>
   );
