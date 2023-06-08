@@ -16,14 +16,14 @@ const FabricCanvas: React.FC = () => {
   const [dialog, setDialog] = useState<DialogConfig>({ show: false});
   const [isCommentCreated, setCommentCreated] = useState<boolean>(false);
   const [isComplete, setCompleted] = useState<boolean>(false);
-  const [currentSelect, setCurrentSelect] = useState<fabric.Object | null>(null);
+  const [currentSelect, setCurrentSelect] = useState<CustomImage | null>(null);
   const [init,setInit] =  useState<boolean>(false);
   const [isInsideObject,setInsideObject] =  useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasInstance = useRef<fabric.Canvas | null>(null);
   const dialogRef = useRef<DialogConfig>(dialog);
-  const currentSelectRef = useRef<fabric.Object | null>(currentSelect);
+  const currentSelectRef = useRef<CustomImage | null>(currentSelect);
   const insideObjectRef = useRef<boolean>(isInsideObject);
 
 
@@ -39,11 +39,11 @@ const FabricCanvas: React.FC = () => {
 
     const canvas = canvasInstance.current as fabric.Canvas;
     if (canvas) {
-      const target = canvas.findTarget(event.e, false);
+      const target = canvas.findTarget(event.e, false)  as CustomImage;
       console.log('target',target);
 
       // Check if the click was inside an object
-      const isInsideObject = target !== null && target !== undefined;
+      const isInsideObject = target !== null && target !== undefined && target.imgType === 'comment';
       console.log('insideObjectRef',isInsideObject);
 
       setInsideObject(isInsideObject); // Update the state value
@@ -143,7 +143,7 @@ const FabricCanvas: React.FC = () => {
         oImg.opacity = 0.5;
         oImg.isFirstSelected = true;
         console.log('imgInstance selected',event);
-        const target = event.target as fabric.Image;
+        const target = event.target as CustomImage;
 
         if(target.cacheKey){
           setCompleted(true);
@@ -195,7 +195,7 @@ const FabricCanvas: React.FC = () => {
     });
   }
 
-  const removeObject = (obj: fabric.Object | fabric.Image | null) => {
+  const removeObject = (obj: fabric.Object | CustomImage | null) => {
     if(!obj) return;
     const input =  document.getElementById('comment_input') as HTMLElement;
     const canvas = canvasInstance.current as fabric.Canvas;
@@ -203,7 +203,7 @@ const FabricCanvas: React.FC = () => {
     if(canvas)  canvas.remove(obj);
   }
 
-  const createInput = (oImg:fabric.Image) => {
+  const createInput = (oImg:CustomImage) => {
     const inputElement = document.createElement('input');
     inputElement.id = 'comment_input';
     inputElement.type = 'text';
@@ -236,8 +236,10 @@ const FabricCanvas: React.FC = () => {
     });
   }
 
-  const createCommentThread = (oImg:fabric.Image,comment: Comment) =>{
-    oImg.cacheKey = generateSerialNumber(); //key to get current comment's val;
+  const createCommentThread = (oImg:CustomImage,comment: Comment) =>{
+    //key to get current comment's val;
+    oImg.cacheKey = generateSerialNumber(); 
+    oImg.imgType = 'comment';
 
     const val = JSON.stringify([comment]);
 
@@ -264,6 +266,20 @@ const FabricCanvas: React.FC = () => {
       sessionStorage.removeItem(activeObj.cacheKey as string);
     };
   }
+
+  const addImage = () =>{
+    const canvas = canvasInstance.current as fabric.Canvas;
+
+    fabric.Image.fromURL('/img/cat.png', function(oImg:CustomImage) {
+      oImg.left = 100;
+      oImg.top = 100;
+      oImg.hasBorders = true;
+      oImg.imgType = 'normal';
+      oImg.collections = [];
+      canvas.add(oImg);
+    });
+  }
+
 
 
   useEffect(() => {
@@ -311,10 +327,9 @@ const FabricCanvas: React.FC = () => {
       // Add event listener to track if the mousedown event is inside an object
       setInit(true);
 
-      return () => {
-        // Clean up resources, if necessary
+      return(()=>{
         canvas.dispose();
-      };
+      })
     }
   }, []);
 
@@ -323,6 +338,7 @@ const FabricCanvas: React.FC = () => {
   return (
     <>
       <div id="canvas-container">
+        <button onClick={addImage}>add Image</button>
         <canvas ref={canvasRef} />
         {
           show 
