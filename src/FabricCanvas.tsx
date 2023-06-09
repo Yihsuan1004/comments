@@ -398,6 +398,8 @@ const FabricCanvas: React.FC = () => {
       oImg.scale(0.7);
       oImg.collections = [];
       canvas.add(oImg);
+      
+      oImg.sendToBack();
 
       oImg.on('selected',()=>{
         console.log('selected',oImg.isFirstSelected);
