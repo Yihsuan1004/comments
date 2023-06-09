@@ -3,7 +3,7 @@ import { fabric } from 'fabric';
 import './FabricCanvas.css';
 import Dialog from './dialog/Dialog';
 import { Comment, DialogConfig } from './interface';
-import { CustomImage } from './class';
+import { CommentImage, CustomImage } from './class';
 import { Point } from 'fabric/fabric-impl';
 
 
@@ -18,14 +18,14 @@ const FabricCanvas: React.FC = () => {
   const [mode, setMode] = useState<string>('move');
   const [isCommentCreated, setCommentCreated] = useState<boolean>(false);
   const [isComplete, setCompleted] = useState<boolean>(false);
-  const [currentSelect, setCurrentSelect] = useState<CustomImage | null>(null);
+  const [currentSelect, setCurrentSelect] = useState<CustomImage | CommentImage | null>(null);
   const [init,setInit] =  useState<boolean>(false);
   const [isInsideObject,setInsideObject] =  useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasInstance = useRef<fabric.Canvas | null>(null);
   const dialogRef = useRef<DialogConfig>(dialog);
-  const currentSelectRef = useRef<CustomImage | null>(currentSelect);
+  const currentSelectRef = useRef<CustomImage | CommentImage | null>(currentSelect);
   const insideObjectRef = useRef<boolean>(isInsideObject);
   const modeRef = useRef<string>(mode);
 
@@ -43,7 +43,7 @@ const FabricCanvas: React.FC = () => {
 
     const canvas = canvasInstance.current as fabric.Canvas;
     if (canvas) {
-      const target = canvas.findTarget(event.e, false)  as CustomImage;
+      const target = canvas.findTarget(event.e, false)  as CustomImage || CommentImage;
       console.log('target',target);
 
       // Check if the click was inside an object
@@ -90,92 +90,93 @@ const FabricCanvas: React.FC = () => {
   const handleKeyDown = (event:any) =>{
     if(event.code === 'Backspace'){
       const canvas = canvasInstance.current;
+
       const curSelectObject = canvas?.getActiveObject() as CustomImage;
 
-      if(!curSelectObject || !canvas || curSelectObject.imgType !== 'normal') return;
+      if(!curSelectObject || !canvas || curSelectObject.imgType !== 'picture') return;
 
       curSelectObject.collections?.forEach(comment =>{
         canvas.remove(comment);
       });
+
       canvas.remove(curSelectObject);
     }
-    console.log(event.code);
   };
 
   const createComment = (canvas:fabric.Canvas, pointer: any, event:fabric.IEvent) => {
 
-    fabric.Image.fromURL('/img/icon_message.svg', function(oImg:CustomImage) {
-      oImg.hasControls = false;
-      oImg.hasBorders = false;
-      oImg.originY = 'bottom';
-      oImg.left = pointer.x;
-      oImg.top = pointer.y;
-      oImg.cacheKey = "";
-      canvas.add(oImg);
-      canvas.setActiveObject(oImg);
+    fabric.Image.fromURL('/img/icon_message.svg', function(cmImg:CommentImage) {
+      cmImg.hasControls = false;
+      cmImg.hasBorders = false;
+      cmImg.originY = 'bottom';
+      cmImg.left = pointer.x;
+      cmImg.top = pointer.y;
+      cmImg.cacheKey = "";
+      canvas.add(cmImg);
+      canvas.setActiveObject(cmImg);
 
-      createInput(oImg,event);
+      createInput(cmImg,event);
       setCommentCreated(true);
-      setCurrentSelect(oImg);
+      setCurrentSelect(cmImg);
 
-      oImg.on('mouseup', (event) => {  
-        console.log('mouseup',oImg.isFirstSelected);
+      cmImg.on('mouseup', (event) => {  
+        console.log('mouseup',cmImg.isFirstSelected);
 
-        if(oImg.parentImg){
-          if(!(oImg.intersectsWithObject(oImg.parentImg))){
-            oImg.parentImg.collections = oImg.parentImg.collections?.filter(obj => obj !== oImg);
-            console.log('intersectsWithObject',oImg.parentImg);
-            oImg.parentImg = undefined;
+        if(cmImg.parentImg){
+          if(!(cmImg.intersectsWithObject(cmImg.parentImg))){
+            cmImg.parentImg.collections = cmImg.parentImg.collections?.filter(obj => obj !== cmImg);
+            console.log('intersectsWithObject',cmImg.parentImg);
+            cmImg.parentImg = undefined;
           }
         }
         else{
           //加入當前放置的img物件的collections裡面
           canvas.forEachObject(obj =>{
             //skip itself
-            if (obj === oImg) return;
+            if (obj === cmImg) return;
             
-            if(!oImg.intersectsWithObject(obj)) return;
+            if(!cmImg.intersectsWithObject(obj)) return;
 
             //find the object that comment intersect with
             else{
               const intObj = obj as CustomImage;
-              if(intObj.imgType === 'normal' && !oImg.parentImg){
-                intObj.collections?.push(oImg);
-                oImg.parentImg = intObj;
+              if(intObj.imgType === 'picture' && !cmImg.parentImg){
+                intObj.collections?.push(cmImg);
+                cmImg.parentImg = intObj;
               }
             }
           })
           console.log('Canvas Target',canvas.targets);
         }
 
-        if(oImg.relationship){
-          oImg.relationship = oImg.calcTransformMatrix();
+        if(cmImg.relationship){
+          cmImg.relationship = cmImg.calcTransformMatrix();
         }
 
-        const target = event.target as CustomImage;
+        const target = event.target as CommentImage;
         
-        if(oImg.isFirstSelected && !oImg.isMoved) {
+        if(cmImg.isFirstSelected && !cmImg.isMoved) {
           //reset value
-          oImg.isFirstSelected = false;
+          cmImg.isFirstSelected = false;
           setDialog({
             show: true,
             comments: dialogRef.current.comments,
-            top:((oImg.top || 0) - (oImg.height || 0)), 
-            left:(oImg.left || 0) + (oImg.width || 0),
+            top:((cmImg.top || 0) - (cmImg.height || 0)), 
+            left:(cmImg.left || 0) + (cmImg.width || 0),
             cacheKey: target.cacheKey
           });
           return;
         }
 
         
-        if(oImg.cacheKey){
-          if(oImg.isMoved){
-            oImg.isMoved = false;
+        if(cmImg.cacheKey){
+          if(cmImg.isMoved){
+            cmImg.isMoved = false;
             setDialog({
               show: dialogRef.current.show,
               comments: dialogRef.current.comments,
-              top:((oImg.top || 0) - (oImg.height || 0)), 
-              left:(oImg.left || 0) + (oImg.width || 0),
+              top:((cmImg.top || 0) - (cmImg.height || 0)), 
+              left:(cmImg.left || 0) + (cmImg.width || 0),
               cacheKey: target.cacheKey
             });
           }
@@ -185,8 +186,8 @@ const FabricCanvas: React.FC = () => {
             setDialog({
               show: !dialogRef.current.show,
               comments: dialogRef.current.comments,
-              top:((oImg.top || 0) - (oImg.height || 0)), 
-              left:(oImg.left || 0) + (oImg.width || 0),
+              top:((cmImg.top || 0) - (cmImg.height || 0)), 
+              left:(cmImg.left || 0) + (cmImg.width || 0),
               cacheKey: target.cacheKey
             });
           }
@@ -194,11 +195,10 @@ const FabricCanvas: React.FC = () => {
       });
 
 
-      oImg.on('selected', (event) => {
-        oImg.opacity = 0.5;
-        oImg.isFirstSelected = true;
-        // console.log('imgInstance selected',event);
-        const target = event.target as CustomImage;
+      cmImg.on('selected', (event) => {
+        cmImg.opacity = 0.5;
+        cmImg.isFirstSelected = true;
+        const target = event.target as CommentImage;
 
         if(target.cacheKey){
           setCompleted(true);
@@ -209,24 +209,22 @@ const FabricCanvas: React.FC = () => {
           setDialog({
             show: dialogRef.current.show,
             comments: comments,
-            top:((oImg.top || 0) - (oImg.height || 0)), 
-            left:(oImg.left || 0) + (oImg.width || 0),
+            top:((cmImg.top || 0) - (cmImg.height || 0)), 
+            left:(cmImg.left || 0) + (cmImg.width || 0),
             cacheKey: target.cacheKey
           });
         }
-        setCurrentSelect(oImg);
+        setCurrentSelect(cmImg);
       });
   
 
-      oImg.on('deselected', (event) => {
-        oImg.opacity = 1;
-        oImg.isFirstSelected = false;
-        // console.log('imgInstance deselected',event);
+      cmImg.on('deselected', (event) => {
+        cmImg.opacity = 1;
 
-        if(oImg.cacheKey === ""){
-          removeObject(oImg);
-        }
-        
+        cmImg.isFirstSelected = false;
+
+        if(cmImg.cacheKey === "") removeObject(cmImg);
+  
         setDialog({
           ...dialog,
           show: false
@@ -234,20 +232,20 @@ const FabricCanvas: React.FC = () => {
 
       });
 
-      oImg.on('moving',()=>{
-        
-        oImg.isMoved = true;
 
+      cmImg.on('moving',()=>{
+        cmImg.isMoved = true;
         const input =  document.getElementById('comment_input') as HTMLElement;
         if(!input || isComplete) return;
-        input.style.left = `${(oImg.left || 0) + (oImg.width || 0)}px`;
-        input.style.top = `${((oImg.top || 0) - (oImg.height || 0))}px`;
+
+        input.style.left = `${(cmImg.left || 0) + (cmImg.width || 0)}px`;
+        input.style.top = `${((cmImg.top || 0) - (cmImg.height || 0))}px`;
       })
 
     });
   }
 
-  const removeObject = (obj: fabric.Object | CustomImage | null) => {
+  const removeObject = (obj: fabric.Object | CommentImage | null) => {
     if(!obj) return;
     const input =  document.getElementById('comment_input') as HTMLElement;
     const canvas = canvasInstance.current as fabric.Canvas;
@@ -255,15 +253,15 @@ const FabricCanvas: React.FC = () => {
     if(canvas)  canvas.remove(obj);
   }
 
-  const createInput = (oImg:CustomImage, event: fabric.IEvent) => {
+  const createInput = (cmImg:CommentImage, event: fabric.IEvent) => {
     const inputElement = document.createElement('input');
     const clickTarget = event.target as CustomImage;
 
     inputElement.id = 'comment_input';
     inputElement.type = 'text';
     inputElement.style.position = 'absolute';
-    inputElement.style.left = `${(oImg.left || 0) + (oImg.width || 0)}px`;
-    inputElement.style.top = `${((oImg.top || 0) - (oImg.height || 0))}px`;
+    inputElement.style.left = `${(cmImg.left || 0) + (cmImg.width || 0)}px`;
+    inputElement.style.top = `${((cmImg.top || 0) - (cmImg.height || 0))}px`;
     inputElement.classList.add('comment-input');
 
     const container = document.getElementById('canvas-container');
@@ -281,46 +279,46 @@ const FabricCanvas: React.FC = () => {
 
       if(event.code === 'Enter' && comment.value !== ''){
         if(clickTarget){
-          clickTarget.collections?.push(oImg);
-          oImg.parentImg = clickTarget;
+          clickTarget.collections?.push(cmImg);
+          cmImg.parentImg = clickTarget;
         }
         inputElement.remove();
 
-        createCommentThread(oImg,comment);
+        createCommentThread(cmImg,comment);
       }
 
       if(event.code === 'Escape' ){
-        removeObject(oImg);
+        removeObject(cmImg);
       }
       event.stopPropagation();
     });
   }
 
-  const createCommentThread = (oImg:CustomImage,comment: Comment) =>{
+  const createCommentThread = (cmImg:CommentImage,comment: Comment) =>{
     //key to get current comment's val;
-    oImg.cacheKey = generateSerialNumber(); 
-    oImg.imgType = 'comment';
+    cmImg.cacheKey = generateSerialNumber(); 
+    cmImg.imgType = 'comment';
 
     const val = JSON.stringify([comment]);
 
-    sessionStorage.setItem(oImg.cacheKey, val);
+    sessionStorage.setItem(cmImg.cacheKey, val);
 
     setDialog({
       show:true, 
       comments: [comment],
-      top:((oImg.top || 0) - (oImg.height || 0)), 
-      left:(oImg.left || 0) + (oImg.width || 0),
-      cacheKey: oImg.cacheKey
+      top:((cmImg.top || 0) - (cmImg.height || 0)), 
+      left:(cmImg.left || 0) + (cmImg.width || 0),
+      cacheKey: cmImg.cacheKey
     });
     setCompleted(true);
   }
 
   /** handle delete threads */
-  const handleDelete = () =>{
+  const handleDeleteDialog = () =>{
     const canvas = canvasInstance.current as fabric.Canvas;
-    const activeObj = canvas.getActiveObject() as CustomImage;
+    const activeObj = canvas.getActiveObject() as CustomImage | CommentImage;
     if(activeObj) {
-      //delete object from canvas
+      //delete dialog from canvas
       removeObject(activeObj);
       //clear session data
       sessionStorage.removeItem(activeObj.cacheKey as string);
@@ -335,29 +333,29 @@ const FabricCanvas: React.FC = () => {
     
     console.log('updateComments',oImg);
 
-    oImg.collections.forEach(obj =>{
-      if(!obj.relationship) return;
-      var relationship = obj.relationship;
+    oImg.collections.forEach(cmImg =>{
+      if(!cmImg.relationship) return;
+      var relationship = cmImg.relationship;
       var newTransform = multiply(
         oImg.calcTransformMatrix(),
         relationship
       );
 
       var opt = fabric.util.qrDecompose(newTransform);
-      obj.set({
+      cmImg.set({
         flipX: false,
         flipY: false,
       });
 
       const position = { x: opt.translateX, y: opt.translateY } as Point;
 
-      obj.setPositionByOrigin(
+      cmImg.setPositionByOrigin(
          position, 
         'center',
         'center'
       )
-      obj.set(opt);
-      obj.setCoords();
+      cmImg.set(opt);
+      cmImg.setCoords();
     });
 
   }
@@ -374,13 +372,13 @@ const FabricCanvas: React.FC = () => {
       let currTransform = oImg.calcTransformMatrix();
       let invertCurrTransform = invert(currTransform);
 
-      oImg.collections?.forEach(obj =>{
+      oImg.collections?.forEach(cmImg =>{
         var desiredTransform = multiply(
           invertCurrTransform,
-          obj.calcTransformMatrix()
+          cmImg.calcTransformMatrix()
         );
 
-        obj.relationship = desiredTransform;
+        cmImg.relationship = desiredTransform;
       })
     }
   }
@@ -394,16 +392,13 @@ const FabricCanvas: React.FC = () => {
       oImg.top = 100;
       oImg.hasBorders = true;
       oImg.hasControls = false;
-      oImg.imgType = 'normal';
+      oImg.imgType = 'picture';
       oImg.scale(0.7);
       oImg.collections = [];
       canvas.add(oImg);
-      
       oImg.sendToBack();
 
       oImg.on('selected',()=>{
-        console.log('selected',oImg.isFirstSelected);
-
         if((oImg.collections || []).length > 0 && !oImg.isFirstSelected){
           bindCommentToImage(oImg);
           oImg.isFirstSelected = true;
@@ -423,7 +418,6 @@ const FabricCanvas: React.FC = () => {
   }
 
 
-
   useEffect(() => {
     dialogRef.current = dialog;
   }, [dialog]);
@@ -441,17 +435,18 @@ const FabricCanvas: React.FC = () => {
     const canvas = canvasInstance.current;
     const selectable =  modeRef.current === 'move';
 
-    const imgs = (canvas?.getObjects() as CustomImage[])?.filter(obj => obj.imgType === 'normal') || [];
+    const imgs = (canvas?.getObjects())?.filter((obj:any)=> obj.imgType === 'picture') || [];
 
     console.log(imgs);
 
-    if(imgs.length >0){
+    if(imgs.length > 0){
       imgs.forEach(img =>{
         img.selectable = selectable;
       });
     }
    
   }, [mode]);
+  
   
   useEffect(()=>{
     
@@ -482,7 +477,7 @@ const FabricCanvas: React.FC = () => {
       canvas.width = 1400;
       canvas.height = 800;
       canvas.preserveObjectStacking = true;
-      console.log('iiii');
+      console.log('init');
       document.addEventListener('keydown',handleKeyDown);
 
       // Add event listener to track if the mousedown event is inside an object
@@ -505,7 +500,7 @@ const FabricCanvas: React.FC = () => {
         {
           show 
           && 
-          <Dialog onDelete = {handleDelete}
+          <Dialog onDelete = {handleDeleteDialog}
                   onClose = {() => setDialog({...dialog , show: false})} 
                   top = {top} 
                   left = {left}
