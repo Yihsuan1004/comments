@@ -87,6 +87,21 @@ const FabricCanvas: React.FC = () => {
   }
 
 
+  const handleKeyDown = (event:any) =>{
+    if(event.code === 'Backspace'){
+      const canvas = canvasInstance.current;
+      const curSelectObject = canvas?.getActiveObject() as CustomImage;
+
+      if(!curSelectObject || !canvas || curSelectObject.imgType !== 'normal') return;
+
+      curSelectObject.collections?.forEach(comment =>{
+        canvas.remove(comment);
+      });
+      canvas.remove(curSelectObject);
+    }
+    console.log(event.code);
+  };
+
   const createComment = (canvas:fabric.Canvas, pointer: any, event:fabric.IEvent) => {
 
     fabric.Image.fromURL('/img/icon_message.svg', function(oImg:CustomImage) {
@@ -105,7 +120,37 @@ const FabricCanvas: React.FC = () => {
 
       oImg.on('mouseup', (event) => {  
         console.log('mouseup',oImg.isFirstSelected);
-        console.log('move',oImg.isMoved);
+
+        if(oImg.parentImg){
+          if(!(oImg.intersectsWithObject(oImg.parentImg))){
+            oImg.parentImg.collections = oImg.parentImg.collections?.filter(obj => obj !== oImg);
+            console.log('intersectsWithObject',oImg.parentImg);
+            oImg.parentImg = undefined;
+          }
+        }
+        else{
+          //加入當前放置的img物件的collections裡面
+          canvas.forEachObject(obj =>{
+            //skip itself
+            if (obj === oImg) return;
+            
+            if(!oImg.intersectsWithObject(obj)) return;
+
+            //find the object that comment intersect with
+            else{
+              const intObj = obj as CustomImage;
+              if(intObj.imgType === 'normal' && !oImg.parentImg){
+                intObj.collections?.push(oImg);
+                oImg.parentImg = intObj;
+              }
+            }
+          })
+          console.log('Canvas Target',canvas.targets);
+        }
+
+        if(oImg.relationship){
+          oImg.relationship = oImg.calcTransformMatrix();
+        }
 
         const target = event.target as CustomImage;
         
@@ -152,7 +197,7 @@ const FabricCanvas: React.FC = () => {
       oImg.on('selected', (event) => {
         oImg.opacity = 0.5;
         oImg.isFirstSelected = true;
-        console.log('imgInstance selected',event);
+        // console.log('imgInstance selected',event);
         const target = event.target as CustomImage;
 
         if(target.cacheKey){
@@ -176,9 +221,8 @@ const FabricCanvas: React.FC = () => {
       oImg.on('deselected', (event) => {
         oImg.opacity = 1;
         oImg.isFirstSelected = false;
-        console.log('imgInstance deselected',event);
+        // console.log('imgInstance deselected',event);
 
-        //待處理
         if(oImg.cacheKey === ""){
           removeObject(oImg);
         }
@@ -193,8 +237,6 @@ const FabricCanvas: React.FC = () => {
       oImg.on('moving',()=>{
         
         oImg.isMoved = true;
-
-        console.log('moving');
 
         const input =  document.getElementById('comment_input') as HTMLElement;
         if(!input || isComplete) return;
@@ -240,6 +282,7 @@ const FabricCanvas: React.FC = () => {
       if(event.code === 'Enter' && comment.value !== ''){
         if(clickTarget){
           clickTarget.collections?.push(oImg);
+          oImg.parentImg = clickTarget;
         }
         inputElement.remove();
 
@@ -249,6 +292,7 @@ const FabricCanvas: React.FC = () => {
       if(event.code === 'Escape' ){
         removeObject(oImg);
       }
+      event.stopPropagation();
     });
   }
 
@@ -283,6 +327,65 @@ const FabricCanvas: React.FC = () => {
     };
   }
 
+  const updateComments = (oImg:CustomImage) =>{
+
+    if(!oImg.collections ||  oImg.collections.length === 0) return;
+
+    var multiply = fabric.util.multiplyTransformMatrices;
+    
+    console.log('updateComments',oImg);
+
+    oImg.collections.forEach(obj =>{
+      if(!obj.relationship) return;
+      var relationship = obj.relationship;
+      var newTransform = multiply(
+        oImg.calcTransformMatrix(),
+        relationship
+      );
+
+      var opt = fabric.util.qrDecompose(newTransform);
+      obj.set({
+        flipX: false,
+        flipY: false,
+      });
+
+      const position = { x: opt.translateX, y: opt.translateY } as Point;
+
+      obj.setPositionByOrigin(
+         position, 
+        'center',
+        'center'
+      )
+      obj.set(opt);
+      obj.setCoords();
+    });
+
+  }
+
+  /**
+   * 
+   * @param oImg Image
+   */
+  const bindCommentToImage = (oImg: CustomImage) =>{
+    if((oImg.collections || []).length > 0 && !oImg.isFirstSelected){
+      let invert = fabric.util.invertTransform;
+      let multiply = fabric.util.multiplyTransformMatrices;
+
+      let currTransform = oImg.calcTransformMatrix();
+      let invertCurrTransform = invert(currTransform);
+
+      oImg.collections?.forEach(obj =>{
+        var desiredTransform = multiply(
+          invertCurrTransform,
+          obj.calcTransformMatrix()
+        );
+
+        obj.relationship = desiredTransform;
+      })
+    }
+  }
+
+
   const addImage = () =>{
     const canvas = canvasInstance.current as fabric.Canvas;
 
@@ -290,63 +393,25 @@ const FabricCanvas: React.FC = () => {
       oImg.left = 100;
       oImg.top = 100;
       oImg.hasBorders = true;
+      oImg.hasControls = false;
       oImg.imgType = 'normal';
+      oImg.scale(0.7);
       oImg.collections = [];
-      var invert = fabric.util.invertTransform;
-      var multiply = fabric.util.multiplyTransformMatrices;
-
-      const updateComments = () =>{
-
-        if(!oImg.collections ||  oImg.collections.length === 0) return;
-
-        oImg.collections.forEach(obj =>{
-          if(!obj.relationship) return;
-          var relationship = obj.relationship;
-          var newTransform = multiply(
-            oImg.calcTransformMatrix(),
-            relationship
-          );
-
-          var opt = fabric.util.qrDecompose(newTransform);
-          obj.set({
-            flipX: false,
-            flipY: false,
-          });
-
-          const position = { x: opt.translateX, y: opt.translateY } as Point;
-
-          obj.setPositionByOrigin(
-             position, 
-            'center',
-            'center'
-          )
-          obj.set(opt);
-          obj.setCoords();
-        });
-
-        
-      }
-    
-      let currTransform = oImg.calcTransformMatrix();
-      let invertCurrTransform = invert(currTransform);
+      canvas.add(oImg);
 
       oImg.on('selected',()=>{
-        if((oImg.collections || []).length > 0){
-          console.log('oooo');
-          oImg.collections?.forEach(obj =>{
-            var desiredTransform = multiply(
-              invertCurrTransform,
-              obj.calcTransformMatrix()
-            );
+        console.log('selected',oImg.isFirstSelected);
 
-            obj.relationship = desiredTransform;
-          })
+        if((oImg.collections || []).length > 0 && !oImg.isFirstSelected){
+          bindCommentToImage(oImg);
+          oImg.isFirstSelected = true;
         }
       })
 
-      oImg.on('moving',updateComments);
+      oImg.on('deselected',()=> oImg.isFirstSelected = false);
 
-      canvas.add(oImg);
+      oImg.on('moving',() => updateComments(oImg));
+
     });
   }
 
@@ -414,11 +479,16 @@ const FabricCanvas: React.FC = () => {
       // Add your Fabric.js code here
       canvas.width = 1400;
       canvas.height = 800;
-      
+      canvas.preserveObjectStacking = true;
+      console.log('iiii');
+      document.addEventListener('keydown',handleKeyDown);
+
       // Add event listener to track if the mousedown event is inside an object
       setInit(true);
 
       return(()=>{
+        document.removeEventListener('keydown',handleKeyDown);
+        sessionStorage.clear();
         canvas.dispose();
       })
     }
