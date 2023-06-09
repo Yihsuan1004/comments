@@ -34,7 +34,7 @@ const FabricCanvas: React.FC = () => {
 
   const generateSerialNumber = (): string => {
     const serialNumber = `SN-${counter}`;
-    setCounter(prevCounter => prevCounter + 1);
+    setCounter((prevCounter: number) => prevCounter + 1);
     return(serialNumber);
   };
 
@@ -149,6 +149,7 @@ const FabricCanvas: React.FC = () => {
           console.log('Canvas Target',canvas.targets);
         }
 
+        
         if(cmImg.relationship){
           cmImg.relationship = cmImg.calcTransformMatrix();
         }
@@ -213,6 +214,9 @@ const FabricCanvas: React.FC = () => {
             left:(cmImg.left || 0) + (cmImg.width || 0),
             cacheKey: target.cacheKey
           });
+        }
+        else{
+          console.log('selected but not complete.');
         }
         setCurrentSelect(cmImg);
       });
@@ -430,6 +434,8 @@ const FabricCanvas: React.FC = () => {
     insideObjectRef.current = isInsideObject;
   }, [isInsideObject]);
 
+
+
   useEffect(() => {
     modeRef.current = mode;
     const canvas = canvasInstance.current;
@@ -449,7 +455,7 @@ const FabricCanvas: React.FC = () => {
   
   
   useEffect(()=>{
-    
+
     if(canvasInstance.current){
       const canvas = canvasInstance.current;
 
@@ -465,19 +471,32 @@ const FabricCanvas: React.FC = () => {
       };
     }
     
-  },[isCommentCreated,isComplete,init])
+  },[init,isCommentCreated,isComplete])
 
-
+ 
   useEffect(() => {
-    if (canvasRef.current) {
+
+    const initFabric = () =>{
       const canvas = new fabric.Canvas(canvasRef.current);
       canvasInstance.current = canvas;
-      
+  
       // Add your Fabric.js code here
       canvas.width = 1400;
       canvas.height = 800;
       canvas.preserveObjectStacking = true;
-      console.log('init');
+      
+    }
+
+    const disposeFabric = () =>{
+      canvasInstance.current?.dispose();
+    }
+
+
+    if (canvasRef.current) {
+      console.log('init'); //ERROR: it will execute twice.
+
+      initFabric();
+
       document.addEventListener('keydown',handleKeyDown);
 
       // Add event listener to track if the mousedown event is inside an object
@@ -486,10 +505,11 @@ const FabricCanvas: React.FC = () => {
       return(()=>{
         document.removeEventListener('keydown',handleKeyDown);
         sessionStorage.clear();
-        canvas.dispose();
+        disposeFabric();
       })
     }
   }, []);
+
 
   const {show ,cacheKey, comments , top , left,} = dialog;
   
@@ -508,9 +528,11 @@ const FabricCanvas: React.FC = () => {
                   cacheKey={cacheKey}
           />
         }
-        <button onClick={() => handleChangeMode('move')}>Move mode</button>
-        <button onClick={() => handleChangeMode('comment')}>Comment mode</button>
-        <button onClick={addImage}>add Image</button>
+        <div>
+          <button onClick={() => handleChangeMode('move')}>Move mode</button>
+          <button onClick={() => handleChangeMode('comment')}>Comment mode</button>
+          <button onClick={addImage} disabled={mode === 'comment'}>add Image</button>
+        </div>
       </div>
     </>
   );

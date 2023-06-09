@@ -1,5 +1,6 @@
 import React, { useEffect, useState, CSSProperties, ChangeEvent } from 'react';
 import { DialogProps, Comment } from '../interface';
+import './dialog.css';
 
 
 const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cacheKey}) => {
@@ -53,7 +54,7 @@ const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cache
   
 
   return (
-    <div style={style}>
+    <div style={style} className='dialog-container'>
       {
         thread &&
         thread.map((comment,index) =>(
