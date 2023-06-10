@@ -1,16 +1,9 @@
-import React, { useEffect, useState, CSSProperties, ChangeEvent } from 'react';
+import React, { useEffect, useState, ChangeEvent } from 'react';
 import { DialogProps, Comment } from '../interface';
-import './dialog.css';
-
+import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, CommentInput, CommentContainer , ToolBar, CommentButton } from './Dialog.style';
 
 const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cacheKey}) => {
-
-  const style: CSSProperties = {
-    position: 'absolute',
-    top: (top || 0),
-    left: (left || 0)
-  };
-
+  
   const [thread,setThread] = useState<DialogProps["comments"]>(comments || []);
   const [disabled,setDisabled] = useState(true);
 
@@ -52,25 +45,29 @@ const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cache
   }
 
   
-
   return (
-    <div style={style} className='dialog-container'>
+    <DialogContainer top={top} left={left}>
+      <ToolBar>
+        <button onClick={onDelete}>Delete</button>
+        <button onClick={onClose}>Close</button>
+      </ToolBar>
       {
         thread &&
         thread.map((comment,index) =>(
-          <div key={index}>
-            <div>Comment:{comment.value}</div>
-            <div>name:{comment.name}</div>
-            <div>time:{comment.time}</div>
-          </div>
+          <DialogContent key={index}>
+            <UserInfo>
+              <UserName>{comment.name}</UserName>
+              <UserTime>{comment.time}</UserTime>
+            </UserInfo>
+            <UserComment>{comment.value}</UserComment>
+          </DialogContent>
         ))
       }
-      <input id="comment_input" type="text" onChange={(event) => onTypeText(event)}/>
-      <button onClick={onAddComment} disabled={disabled}>add</button>
-      <button onClick={onClose}>Close</button>
-      <button onClick={onDelete}>Delete</button>
-
-    </div>
+      <CommentContainer>
+        <CommentInput id="comment_input" type="text" onChange={(event) => onTypeText(event)}></CommentInput>
+        <CommentButton onClick={onAddComment} disabled={disabled}>add</CommentButton>
+      </CommentContainer>
+    </DialogContainer>
   );
 };
 
