@@ -1,7 +1,9 @@
 import styled from '@emotion/styled'
+import { PositionProps } from '../interface';
 
 
-export const DialogContainer = styled.div((props:any) =>({
+
+export const DialogContainer = styled.div((props:PositionProps) =>({
     position: 'absolute',
     top: (props.top || 0),
     left: (props.left || 0),
@@ -24,6 +26,11 @@ export const UserInfo = styled.div({
     alignItems: 'center',
     paddingBottom: '12px'
   });
+
+export const DialogContent = styled.div({
+    padding: '12px 0',
+    borderTop: '1px solid #eee',
+});
   
   
 export const UserName = styled.div({
@@ -42,46 +49,38 @@ export const UserComment = styled.div({
   });
   
   
-export const DialogContent = styled.div({
-    padding: '12px 0',
-    borderTop: '1px solid #eee',
-});
-  
-
 export const CommentContainer = styled.div({
     display:'flex',
-    alignItems: 'center'
-})
- 
-
-export const CommentInput = styled.input({
-    padding: '8px',
-    width: '100%',
-    boxSizing: 'border-box',
+    alignItems: 'center',
+    padding: '4px',
     border: '1px solid #bbb',
-    borderRight: 'none',
-    borderRadius: '8px 0 0 8px',
-    transition: 'all .4s',
+    borderRadius: '8px',
     '&:hover': {
-        borderColor: '#999',
+      borderColor: '#999',
     },
-    '&:focus': {
-      outline:'none',
-      borderColor: '#777'
-    }
- })
 
-
-
-
-export const CommentButton = styled.button({
-    height: '33px',
-    borderRadius: '0 8px 8px 0',
-    padding: '0 12px',
-    border:'1px solid #777'
+    textarea: {
+      padding: '8px',
+      width: '100%',
+      boxSizing: 'border-box',
+      border: 'none',
+      borderRadius: '8px 0 0 8px',
+      transition: 'all .4s',
+      fontSize: '14px',
+      '&:focus': {
+        outline: 'none',
+        borderColor: '#777',
+      },
+    },
+    button: {
+      padding: '0 12px',
+      width: '32px',
+      height: '32px',
+      borderRadius: '50px',
+      border: 'none',
+    },
 })
-   
-   
+
 export const ToolBar = styled.div({
     position: 'absolute',
     top: 0,
@@ -91,3 +90,4 @@ export const ToolBar = styled.div({
     display: 'flex',
     justifyContent: 'flex-end'
 });
+

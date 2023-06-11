@@ -2,7 +2,7 @@
 export interface DialogConfig{
   show: boolean,
   cacheKey?: string
-  comments?: Comment[] | []
+  comments?: CommentPanel[] | []
   top?: number,
   left?: number,
 }
@@ -12,12 +12,18 @@ export interface DialogProps{
   onDelete: () => void,
   top: number | undefined,
   left: number |  undefined,
-  comments?: Comment[] | [],
+  comments?: CommentPanel[] | [],
   cacheKey: string |  undefined,
 }
 
-export interface Comment{
+export interface CommentPanel{
   name: string,
   value: string |  undefined
   time: string
+}
+
+
+export interface PositionProps {
+  top: number |  undefined,
+  left: number |  undefined
 }

@@ -2,7 +2,9 @@ import React, { useRef, useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 import './FabricCanvas.css';
 import Dialog from './dialog/Dialog';
-import { Comment, DialogConfig } from './interface';
+import Comment from './comment/Comment';
+
+import { CommentPanel, DialogConfig } from './interface';
 import { CommentImage, CustomImage } from './class';
 import { Point } from 'fabric/fabric-impl';
 
@@ -16,11 +18,14 @@ const FabricCanvas: React.FC = () => {
 
   const [dialog, setDialog] = useState<DialogConfig>({ show: false});
   const [mode, setMode] = useState<string>('move');
+  const [image, setImage] = useState<CustomImage | null>(null);
+
   const [isCommentCreated, setCommentCreated] = useState<boolean>(false);
   const [isComplete, setCompleted] = useState<boolean>(false);
   const [currentSelect, setCurrentSelect] = useState<CustomImage | CommentImage | null>(null);
   const [init,setInit] =  useState<boolean>(false);
   const [isInsideObject,setInsideObject] =  useState<boolean>(false);
+
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasInstance = useRef<fabric.Canvas | null>(null);
@@ -39,12 +44,16 @@ const FabricCanvas: React.FC = () => {
   };
 
   const handleBeforeMousedown = (event:fabric.IEvent):void => {
-    if(modeRef.current === 'move') return;
 
     const canvas = canvasInstance.current as fabric.Canvas;
     if (canvas) {
       const target = canvas.findTarget(event.e, false)  as CustomImage || CommentImage;
       console.log('target',target);
+
+      if (target && target.imgType ==='picture') setImage(target);
+      else setImage(null);
+
+      if(modeRef.current === 'move') return;
 
       // Check if the click was inside an object
       const isInsideObject = target !== null && target !== undefined && target.imgType === 'comment';
@@ -112,6 +121,8 @@ const FabricCanvas: React.FC = () => {
       cmImg.left = pointer.x;
       cmImg.top = pointer.y;
       cmImg.cacheKey = "";
+      cmImg.imgType = "comment";
+
       canvas.add(cmImg);
       canvas.setActiveObject(cmImg);
 
@@ -123,6 +134,7 @@ const FabricCanvas: React.FC = () => {
         console.log('mouseup',cmImg.isFirstSelected);
 
         if(cmImg.parentImg){
+          //error: 若直接從a圖移到b圖會無法綁定
           if(!(cmImg.intersectsWithObject(cmImg.parentImg))){
             cmImg.parentImg.collections = cmImg.parentImg.collections?.filter(obj => obj !== cmImg);
             console.log('intersectsWithObject',cmImg.parentImg);
@@ -200,7 +212,7 @@ const FabricCanvas: React.FC = () => {
         cmImg.opacity = 0.5;
         cmImg.isFirstSelected = true;
         const target = event.target as CommentImage;
-
+        
         if(target.cacheKey){
           setCompleted(true);
           setCommentCreated(true);
@@ -237,9 +249,10 @@ const FabricCanvas: React.FC = () => {
       });
 
 
-      cmImg.on('moving',()=>{
+      cmImg.on('moving',(event)=>{
         cmImg.isMoved = true;
-        const input =  document.getElementById('comment_input') as HTMLElement;
+        console.log('move currentSelect',event);
+        const input =  document.getElementById('comment_input_container') as HTMLElement;
         if(!input || isComplete) return;
 
         input.style.left = `${(cmImg.left || 0) + (cmImg.width || 0)}px`;
@@ -251,58 +264,80 @@ const FabricCanvas: React.FC = () => {
 
   const removeObject = (obj: fabric.Object | CommentImage | null) => {
     if(!obj) return;
-    const input =  document.getElementById('comment_input') as HTMLElement;
+    setCommentCreated(false);
     const canvas = canvasInstance.current as fabric.Canvas;
-    if(input) input.remove();
     if(canvas)  canvas.remove(obj);
   }
 
   const createInput = (cmImg:CommentImage, event: fabric.IEvent) => {
-    const inputElement = document.createElement('input');
-    const clickTarget = event.target as CustomImage;
+    // const inputElement = document.createElement('input');
+    // const clickTarget = event.target as CustomImage;
 
-    inputElement.id = 'comment_input';
-    inputElement.type = 'text';
-    inputElement.style.position = 'absolute';
-    inputElement.style.left = `${(cmImg.left || 0) + (cmImg.width || 0)}px`;
-    inputElement.style.top = `${((cmImg.top || 0) - (cmImg.height || 0))}px`;
-    inputElement.classList.add('comment-input');
+    // inputElement.id = 'comment_input';
+    // inputElement.type = 'text';
+    // inputElement.style.position = 'absolute';
+    // inputElement.style.left = `${(cmImg.left || 0) + (cmImg.width || 0)}px`;
+    // inputElement.style.top = `${((cmImg.top || 0) - (cmImg.height || 0))}px`;
+    // inputElement.classList.add('comment-input');
 
-    const container = document.getElementById('canvas-container');
-    if (container) {
-      container.appendChild(inputElement);
-      inputElement.focus();
-    }
+    // const container = document.getElementById('canvas-container');
+    // if (container) {
+    //   container.appendChild(inputElement);
+    //   inputElement.focus();
+    // }
 
-    inputElement.addEventListener('keydown',(event)=>{
-      const comment : Comment = {
-        name: "Cielo",
-        value: (event.target as HTMLInputElement).value,
-        time: new Date().toLocaleString()
-      } ;
+    // inputElement.addEventListener('keydown',(event)=>{
+    //   const comment : CommentPanel = {
+    //     name: "Cielo",
+    //     value: (event.target as HTMLInputElement).value,
+    //     time: new Date().toLocaleString()
+    //   } ;
 
-      if(event.code === 'Enter' && comment.value !== ''){
-        if(clickTarget){
-          clickTarget.collections?.push(cmImg);
-          cmImg.parentImg = clickTarget;
-        }
-        inputElement.remove();
+    //   if(event.code === 'Enter' && comment.value !== ''){
+    //     if(clickTarget){
+    //       clickTarget.collections?.push(cmImg);
+    //       cmImg.parentImg = clickTarget;
+    //     }
+    //     inputElement.remove();
 
-        createCommentThread(cmImg,comment);
-      }
+    //     createCommentThread(cmImg,comment);
+    //   }
 
-      if(event.code === 'Escape' ){
-        removeObject(cmImg);
-      }
-      event.stopPropagation();
-    });
+    //   if(event.code === 'Escape' ){
+    //     removeObject(cmImg);
+    //   }
+    //   event.stopPropagation();
+    // });
   }
 
-  const createCommentThread = (cmImg:CommentImage,comment: Comment) =>{
+  const handleCommentKeydown = (event: KeyboardEvent)=> {
+   
+    const comment : CommentPanel = {
+      name: "Cielo",
+      value: (event.target as HTMLInputElement).value,
+      time: new Date().toLocaleString()
+    } ;
+
+    if(event.code === 'Enter' && comment.value !== ''){
+      setCompleted(true);
+      if(currentSelect) createCommentThread(currentSelect as CommentImage,comment);
+    }
+
+    if(event.code === 'Escape' ){
+      if(currentSelect) removeObject(currentSelect);
+    }
+    event.stopPropagation();
+  }
+
+  const createCommentThread = (cmImg:CommentImage,comment: CommentPanel) =>{
     //key to get current comment's val;
     cmImg.cacheKey = generateSerialNumber(); 
     cmImg.imgType = 'comment';
-
+    console.log(image,'image');
+    if(image){
+      image.collections?.push(cmImg);
+      cmImg.parentImg = image;
+    }
     const val = JSON.stringify([comment]);
 
     sessionStorage.setItem(cmImg.cacheKey, val);
@@ -314,7 +349,6 @@ const FabricCanvas: React.FC = () => {
       left:(cmImg.left || 0) + (cmImg.width || 0),
       cacheKey: cmImg.cacheKey
     });
-    setCompleted(true);
   }
 
   /** handle delete threads */
@@ -527,6 +561,13 @@ const FabricCanvas: React.FC = () => {
                   comments = {comments}
                   cacheKey={cacheKey}
           />
+        }
+        {
+          isCommentCreated && !isComplete
+          &&
+          <Comment top={(currentSelect?.top || 0 ) - (currentSelect?.height || 0)} 
+                  left={(currentSelect?.left || 0) + (currentSelect?.width || 0)} 
+                  onKeyDown={(event:KeyboardEvent) => handleCommentKeydown(event)}/>
         }
         <div>
           <button onClick={() => handleChangeMode('move')}>Move mode</button>

@@ -1,3 +1,12 @@
 .comment-input{
   padding: 8px 12px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  transition: all .4s;
+}
+
+.comment-input:focus{
+  outline: none;
+  border-color: '#777';
 }

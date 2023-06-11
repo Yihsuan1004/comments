@@ -4,8 +4,6 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import FabricCanvas from './FabricCanvas';
 
-/** @jsxImportSource @emotion/react */
-
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );

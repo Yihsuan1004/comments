@@ -1,11 +1,13 @@
 import React, { useEffect, useState, ChangeEvent } from 'react';
-import { DialogProps, Comment } from '../interface';
-import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, CommentInput, CommentContainer , ToolBar, CommentButton } from './Dialog.style';
+import { DialogProps, CommentPanel } from '../interface';
+import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, CommentContainer , ToolBar } from './Dialog.style';
+import '../comment/Comment';
+import Comment from '../comment/Comment';
 
 const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cacheKey}) => {
   
   const [thread,setThread] = useState<DialogProps["comments"]>(comments || []);
-  const [disabled,setDisabled] = useState(true);
+  const [disabled,setDisabled] = useState<boolean>(true);
 
   useEffect(() => {
     setThread(comments || []);
@@ -14,10 +16,10 @@ const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cache
   const onAddComment = () => {
     const input = document.getElementById('comment_input') as HTMLInputElement;
 
-    let updateObj!: Comment;
+    let updateObj!: CommentPanel;
 
     if(cacheKey){
-      let currentVal : Comment[] = JSON.parse(sessionStorage.getItem(cacheKey) || "");
+      let currentVal : CommentPanel[] = JSON.parse(sessionStorage.getItem(cacheKey) || "");
       updateObj =  {
         name: "Cielo",
         value:input.value,
@@ -34,7 +36,8 @@ const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cache
     input.value = "";
   }
 
-  const onTypeText = (event:ChangeEvent) => {
+  const onTypeText = (event:ChangeEvent | KeyboardEvent) => {
+
     const val = (event.target as HTMLInputElement).value;
     if(val && val.length > 0){
       setDisabled(false);
@@ -63,10 +66,9 @@ const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cache
           </DialogContent>
         ))
       }
-      <CommentContainer>
-        <CommentInput id="comment_input" type="text" onChange={(event) => onTypeText(event)}></CommentInput>
-        <CommentButton onClick={onAddComment} disabled={disabled}>add</CommentButton>
-      </CommentContainer>
+      <Comment onAddComment={onAddComment} 
+               disabled={disabled}
+               onChange={(event: ChangeEvent | KeyboardEvent) => onTypeText(event)}/>
     </DialogContainer>
   );
 };
