@@ -1,12 +1,16 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, ChangeEvent } from 'react';
 import { fabric } from 'fabric';
 import './FabricCanvas.css';
 import Dialog from './dialog/Dialog';
 import Comment from './comment/Comment';
+import CommentMode from './icon/icon_comment_mode.svg';
+import MoveMode from './icon/icon_move_mode.svg';
+import AddImage from './icon/icon_add_image.svg';
 
 import { CommentPanel, DialogConfig } from './interface';
 import { CommentImage, CustomImage } from './class';
 import { Point } from 'fabric/fabric-impl';
+import { ToolBar } from './FarbricCanvas.style';
 
 
 const User = {
@@ -19,6 +23,7 @@ const FabricCanvas: React.FC = () => {
   const [dialog, setDialog] = useState<DialogConfig>({ show: false});
   const [mode, setMode] = useState<string>('move');
   const [image, setImage] = useState<CustomImage | null>(null);
+  const [disabled,setDisabled] = useState<boolean>(true);
 
   const [isCommentCreated, setCommentCreated] = useState<boolean>(false);
   const [isComplete, setCompleted] = useState<boolean>(false);
@@ -76,11 +81,9 @@ const FabricCanvas: React.FC = () => {
 
     const canvas = canvasInstance.current as fabric.Canvas;
     const pointer = canvas.getPointer(event.e);
-    console.log('pointer',pointer);
-    console.log('event',event.target);
 
     if(isCommentCreated && !isComplete){
-      setCommentCreated(false); // Reset the flag
+      resetCommentInput();
       removeObject(currentSelect);
       return; // Ignore the event
     }
@@ -113,7 +116,6 @@ const FabricCanvas: React.FC = () => {
   };
 
   const createComment = (canvas:fabric.Canvas, pointer: any, event:fabric.IEvent) => {
-
     fabric.Image.fromURL('/img/icon_message.svg', function(cmImg:CommentImage) {
       cmImg.hasControls = false;
       cmImg.hasBorders = false;
@@ -122,94 +124,28 @@ const FabricCanvas: React.FC = () => {
       cmImg.top = pointer.y;
       cmImg.cacheKey = "";
       cmImg.imgType = "comment";
-
+      cmImg.opacity = 0.7;
       canvas.add(cmImg);
       canvas.setActiveObject(cmImg);
 
-      createInput(cmImg,event);
       setCommentCreated(true);
       setCurrentSelect(cmImg);
 
       cmImg.on('mouseup', (event) => {  
-        console.log('mouseup',cmImg.isFirstSelected);
+        cmImg.opacity = 1;
 
-        if(cmImg.parentImg){
-          //error: 若直接從a圖移到b圖會無法綁定
-          if(!(cmImg.intersectsWithObject(cmImg.parentImg))){
-            cmImg.parentImg.collections = cmImg.parentImg.collections?.filter(obj => obj !== cmImg);
-            console.log('intersectsWithObject',cmImg.parentImg);
-            cmImg.parentImg = undefined;
-          }
-        }
-        else{
-          //加入當前放置的img物件的collections裡面
-          canvas.forEachObject(obj =>{
-            //skip itself
-            if (obj === cmImg) return;
-            
-            if(!cmImg.intersectsWithObject(obj)) return;
+        detectCommentIntersection(cmImg);
 
-            //find the object that comment intersect with
-            else{
-              const intObj = obj as CustomImage;
-              if(intObj.imgType === 'picture' && !cmImg.parentImg){
-                intObj.collections?.push(cmImg);
-                cmImg.parentImg = intObj;
-              }
-            }
-          })
-          console.log('Canvas Target',canvas.targets);
-        }
+        toggleDialog(event,cmImg);
 
-        
         if(cmImg.relationship){
           cmImg.relationship = cmImg.calcTransformMatrix();
         }
 
-        const target = event.target as CommentImage;
-        
-        if(cmImg.isFirstSelected && !cmImg.isMoved) {
-          //reset value
-          cmImg.isFirstSelected = false;
-          setDialog({
-            show: true,
-            comments: dialogRef.current.comments,
-            top:((cmImg.top || 0) - (cmImg.height || 0)), 
-            left:(cmImg.left || 0) + (cmImg.width || 0),
-            cacheKey: target.cacheKey
-          });
-          return;
-        }
-
-        
-        if(cmImg.cacheKey){
-          if(cmImg.isMoved){
-            cmImg.isMoved = false;
-            setDialog({
-              show: dialogRef.current.show,
-              comments: dialogRef.current.comments,
-              top:((cmImg.top || 0) - (cmImg.height || 0)), 
-              left:(cmImg.left || 0) + (cmImg.width || 0),
-              cacheKey: target.cacheKey
-            });
-          }
-
-          else{
-            console.log('mouseup');
-            setDialog({
-              show: !dialogRef.current.show,
-              comments: dialogRef.current.comments,
-              top:((cmImg.top || 0) - (cmImg.height || 0)), 
-              left:(cmImg.left || 0) + (cmImg.width || 0),
-              cacheKey: target.cacheKey
-            });
-          }
-        }
       });
 
 
-      cmImg.on('selected', (event) => {
-        cmImg.opacity = 0.5;
+      cmImg.on('selected', (event) => { 
         cmImg.isFirstSelected = true;
         const target = event.target as CommentImage;
         
@@ -227,16 +163,13 @@ const FabricCanvas: React.FC = () => {
             cacheKey: target.cacheKey
           });
         }
-        else{
-          console.log('selected but not complete.');
-        }
+      
         setCurrentSelect(cmImg);
       });
   
 
       cmImg.on('deselected', (event) => {
         cmImg.opacity = 1;
-
         cmImg.isFirstSelected = false;
 
         if(cmImg.cacheKey === "") removeObject(cmImg);
@@ -246,13 +179,16 @@ const FabricCanvas: React.FC = () => {
           show: false
         });
 
+        resetCommentInput();
       });
 
 
       cmImg.on('moving',(event)=>{
+
         cmImg.isMoved = true;
-        console.log('move currentSelect',event);
+
         const input =  document.getElementById('comment_input_container') as HTMLElement;
+
         if(!input || isComplete) return;
 
         input.style.left = `${(cmImg.left || 0) + (cmImg.width || 0)}px`;
@@ -264,54 +200,91 @@ const FabricCanvas: React.FC = () => {
 
   const removeObject = (obj: fabric.Object | CommentImage | null) => {
     if(!obj) return;
-    setCommentCreated(false);
+    resetCommentInput();
     const canvas = canvasInstance.current as fabric.Canvas;
     if(canvas)  canvas.remove(obj);
   }
 
-  const createInput = (cmImg:CommentImage, event: fabric.IEvent) => {
-    // const inputElement = document.createElement('input');
-    // const clickTarget = event.target as CustomImage;
+  const resetCommentInput = () =>{
+    setCommentCreated(false);
+    setDisabled(true);
+  }
 
-    // inputElement.id = 'comment_input';
-    // inputElement.type = 'text';
-    // inputElement.style.position = 'absolute';
-    // inputElement.style.left = `${(cmImg.left || 0) + (cmImg.width || 0)}px`;
-    // inputElement.style.top = `${((cmImg.top || 0) - (cmImg.height || 0))}px`;
-    // inputElement.classList.add('comment-input');
 
-    // const container = document.getElementById('canvas-container');
-    // if (container) {
-    //   container.appendChild(inputElement);
-    //   inputElement.focus();
-    // }
+  const detectCommentIntersection = (cmImg: CommentImage) =>{
+    
+    if (cmImg.parentImg &&!cmImg.intersectsWithObject(cmImg.parentImg)) {
 
-    // inputElement.addEventListener('keydown',(event)=>{
-    //   const comment : CommentPanel = {
-    //     name: "Cielo",
-    //     value: (event.target as HTMLInputElement).value,
-    //     time: new Date().toLocaleString()
-    //   } ;
+      cmImg.parentImg.collections = cmImg.parentImg.collections?.filter(obj => obj !== cmImg);
+      cmImg.parentImg = undefined;
+    }
 
-    //   if(event.code === 'Enter' && comment.value !== ''){
-    //     if(clickTarget){
-    //       clickTarget.collections?.push(cmImg);
-    //       cmImg.parentImg = clickTarget;
-    //     }
-    //     inputElement.remove();
+    const canvas = canvasInstance.current as fabric.Canvas;
 
-    //     createCommentThread(cmImg,comment);
-    //   }
+    if(!canvas) return;
 
-    //   if(event.code === 'Escape' ){
-    //     removeObject(cmImg);
-    //   }
-    //   event.stopPropagation();
-    // });
+    let intObj: CustomImage | undefined;
+
+    canvas.forEachObject(obj => {
+      // Skip itself
+      if (obj === cmImg) return;
+
+      if (!cmImg.intersectsWithObject(obj)) return;
+
+      // Find the object that the comment intersects with
+      intObj = obj as CustomImage;
+      if (intObj && intObj.imgType === 'picture') {
+        intObj.collections?.push(cmImg);
+        cmImg.parentImg = intObj;
+      }
+    });
+
+  }
+
+
+  const toggleDialog = (event:fabric.IEvent,cmImg: CommentImage) =>{
+
+    const target = event.target as CommentImage;
+        
+    if(cmImg.isFirstSelected && !cmImg.isMoved) {
+      //reset value
+      cmImg.isFirstSelected = false;
+      setDialog({
+        show: true,
+        comments: dialogRef.current.comments,
+        top:((cmImg.top || 0) - (cmImg.height || 0)), 
+        left:(cmImg.left || 0) + (cmImg.width || 0),
+        cacheKey: target.cacheKey
+      });
+      return;
+    }
+
+    if(cmImg.cacheKey){
+      if(cmImg.isMoved){
+        cmImg.isMoved = false;
+        setDialog({
+          show: dialogRef.current.show,
+          comments: dialogRef.current.comments,
+          top:((cmImg.top || 0) - (cmImg.height || 0)), 
+          left:(cmImg.left || 0) + (cmImg.width || 0),
+          cacheKey: target.cacheKey
+        });
+      }
+
+      else{
+        setDialog({
+          show: !dialogRef.current.show,
+          comments: dialogRef.current.comments,
+          top:((cmImg.top || 0) - (cmImg.height || 0)), 
+          left:(cmImg.left || 0) + (cmImg.width || 0),
+          cacheKey: target.cacheKey
+        });
+      }
+    }
   }
 
   const handleCommentKeydown = (event: KeyboardEvent)=> {
-   
+    
     const comment : CommentPanel = {
       name: "Cielo",
       value: (event.target as HTMLInputElement).value,
@@ -325,21 +298,22 @@ const FabricCanvas: React.FC = () => {
 
     if(event.code === 'Escape' ){
       if(currentSelect) removeObject(currentSelect);
+      resetCommentInput();
     }
-    event.stopPropagation();
   }
 
   const createCommentThread = (cmImg:CommentImage,comment: CommentPanel) =>{
     //key to get current comment's val;
     cmImg.cacheKey = generateSerialNumber(); 
     cmImg.imgType = 'comment';
-    console.log(image,'image');
+
+    //If user click image to creat comment.
     if(image){
       image.collections?.push(cmImg);
       cmImg.parentImg = image;
     }
-    const val = JSON.stringify([comment]);
 
+    const val = JSON.stringify([comment]);
     sessionStorage.setItem(cmImg.cacheKey, val);
 
     setDialog({
@@ -455,6 +429,17 @@ const FabricCanvas: React.FC = () => {
     setMode(mode);
   }
 
+  
+  const onTypeText = (event:ChangeEvent | KeyboardEvent) => {
+
+    const val = (event.target as HTMLInputElement).value;
+    if(val && val.length > 0){
+      setDisabled(false);
+    }
+    else{
+      setDisabled(true);
+    }
+  }
 
   useEffect(() => {
     dialogRef.current = dialog;
@@ -554,7 +539,7 @@ const FabricCanvas: React.FC = () => {
         {
           show 
           && 
-          <Dialog onDelete = {handleDeleteDialog}
+          <Dialog onResolve = {handleDeleteDialog}
                   onClose = {() => setDialog({...dialog , show: false})} 
                   top = {top} 
                   left = {left}
@@ -566,14 +551,25 @@ const FabricCanvas: React.FC = () => {
           isCommentCreated && !isComplete
           &&
           <Comment top={(currentSelect?.top || 0 ) - (currentSelect?.height || 0)} 
-                  left={(currentSelect?.left || 0) + (currentSelect?.width || 0)} 
-                  onKeyDown={(event:KeyboardEvent) => handleCommentKeydown(event)}/>
+                   left={(currentSelect?.left || 0) + (currentSelect?.width || 0)} 
+                   disabled={disabled}
+                   onChange={(event: ChangeEvent | KeyboardEvent) => onTypeText(event)}
+                   onKeyDown={(event:KeyboardEvent) => handleCommentKeydown(event)}/>
         }
-        <div>
-          <button onClick={() => handleChangeMode('move')}>Move mode</button>
-          <button onClick={() => handleChangeMode('comment')}>Comment mode</button>
-          <button onClick={addImage} disabled={mode === 'comment'}>add Image</button>
-        </div>
+        <ToolBar mode={mode}>
+          <button onClick={() => handleChangeMode('move')}>
+            <img src={MoveMode} alt="comment mode" />
+            <span>Move mode</span>
+          </button>
+          <button onClick={() => handleChangeMode('comment')}>
+            <img src={CommentMode} alt="comment mode" />
+            <span>Comment mode</span>
+          </button>
+          <button onClick={addImage} disabled={mode === 'comment'}>
+            <img src={AddImage} alt="comment mode" />
+            <span>add Image</span>
+          </button>
+        </ToolBar>
       </div>
     </>
   );

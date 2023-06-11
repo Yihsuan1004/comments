@@ -1,10 +1,14 @@
 import React, { useEffect, useState, ChangeEvent } from 'react';
 import { DialogProps, CommentPanel } from '../interface';
-import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, CommentContainer , ToolBar } from './Dialog.style';
+import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, DialogToolBar } from './Dialog.style';
 import '../comment/Comment';
 import Comment from '../comment/Comment';
+import  Resolve from '../icon/icon_resolve.svg';
+import  Close from '../icon/icon_close.svg';
+import { Tooltip } from 'react-tooltip'
 
-const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cacheKey}) => {
+
+const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cacheKey}) => {
   
   const [thread,setThread] = useState<DialogProps["comments"]>(comments || []);
   const [disabled,setDisabled] = useState<boolean>(true);
@@ -36,6 +40,13 @@ const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cache
     input.value = "";
   }
 
+  const handleKeyDown = (event: KeyboardEvent)=>{
+    const target = event.target as HTMLInputElement;
+    if(event.code === 'Enter' && target.value !== ''){
+      onAddComment();
+    }
+  }
+
   const onTypeText = (event:ChangeEvent | KeyboardEvent) => {
 
     const val = (event.target as HTMLInputElement).value;
@@ -50,10 +61,22 @@ const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cache
   
   return (
     <DialogContainer top={top} left={left}>
-      <ToolBar>
-        <button onClick={onDelete}>Delete</button>
-        <button onClick={onClose}>Close</button>
-      </ToolBar>
+      <DialogToolBar>
+        <button onClick={onResolve}
+                data-tooltip-id="resolve-tooltip"
+                data-tooltip-content="Resolve"
+                data-tooltip-place="top">
+          <img src={Resolve} alt="resolve icon" />
+          <Tooltip id="resolve-tooltip" />
+        </button>
+        <button onClick={onClose}
+                data-tooltip-id="close-tooltip"
+                data-tooltip-content="Close"
+                data-tooltip-place="top">
+          <img src={Close} alt="close icon" />
+          <Tooltip id="close-tooltip" />
+        </button>
+      </DialogToolBar>
       {
         thread &&
         thread.map((comment,index) =>(
@@ -67,6 +90,7 @@ const Dialog: React.FC<DialogProps> = ({onClose,onDelete,top,left,comments,cache
         ))
       }
       <Comment onAddComment={onAddComment} 
+               onKeyDown={(event:KeyboardEvent) => handleKeyDown(event)}
                disabled={disabled}
                onChange={(event: ChangeEvent | KeyboardEvent) => onTypeText(event)}/>
     </DialogContainer>

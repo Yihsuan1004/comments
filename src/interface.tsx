@@ -9,7 +9,7 @@ export interface DialogConfig{
 
 export interface DialogProps{
   onClose: () => void,
-  onDelete: () => void,
+  onResolve: () => void,
   top: number | undefined,
   left: number |  undefined,
   comments?: CommentPanel[] | [],

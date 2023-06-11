@@ -17,13 +17,13 @@ export const CommentContainer = styled.div((props:PositionProps) => ({
       borderColor: '#999',
     },
 
-    textarea: {
+    input: {
       padding: '8px',
-      width: '100%',
+      flex: '1',
       boxSizing: 'border-box',
       border: 'none',
       borderRadius: '8px 0 0 8px',
-      transition: 'all .4s',
+      transition: 'borderColor .4s',
       fontSize: '14px',
       '&:focus': {
         outline: 'none',
@@ -31,11 +31,18 @@ export const CommentContainer = styled.div((props:PositionProps) => ({
       },
     },
     button: {
-      padding: '0 12px',
-      width: '32px',
-      height: '32px',
+      padding: '4px',
+      width: '28px',
+      height: '28px',
       borderRadius: '50px',
       border: 'none',
+      backgroundColor: '#4553D4',
+      '&:disabled':{
+        backgroundColor: '#d3d3d3'
+      },
+      img:{
+        width: '100%'
+      }
     },
 }))
 

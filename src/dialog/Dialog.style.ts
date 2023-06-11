@@ -81,13 +81,33 @@ export const CommentContainer = styled.div({
     },
 })
 
-export const ToolBar = styled.div({
+export const DialogToolBar = styled.div({
     position: 'absolute',
     top: 0,
     left: 0,
     padding: '12px 16px',
     width: '100%',
     display: 'flex',
-    justifyContent: 'flex-end'
+    justifyContent: 'flex-end',
+    button:{
+      padding: '6px',
+      width: '30px',
+      height: '30px',
+      border: 'none',
+      borderRadius: '4px',
+      backgroundColor: '#fff',
+      transition: 'background-color 0.4s',
+      cursor: 'pointer',
+      img:{
+        width: '100%',
+        height: 'auto'
+      },
+      '&:hover': {
+        backgroundColor: '#eee',
+      },
+      '&:first-of-type': {
+        marginRight: '4px'
+      },
+    }
 });
 
