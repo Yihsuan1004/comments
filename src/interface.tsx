@@ -14,6 +14,7 @@ export interface DialogProps{
   left: number |  undefined,
   comments?: CommentPanel[] | [],
   cacheKey: string |  undefined,
+  userInfo: UserInfo |  null,
 }
 
 export interface CommentPanel{
@@ -26,4 +27,8 @@ export interface CommentPanel{
 export interface PositionProps {
   top: number |  undefined,
   left: number |  undefined
+}
+
+export interface UserInfo {
+  name: string |  undefined
 }

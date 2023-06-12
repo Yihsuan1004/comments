@@ -8,7 +8,7 @@ import  Close from '../icon/icon_close.svg';
 import { Tooltip } from 'react-tooltip'
 
 
-const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cacheKey}) => {
+const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cacheKey,userInfo}) => {
   
   const [thread,setThread] = useState<DialogProps["comments"]>(comments || []);
   const [disabled,setDisabled] = useState<boolean>(true);
@@ -25,7 +25,7 @@ const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cach
     if(cacheKey){
       let currentVal : CommentPanel[] = JSON.parse(sessionStorage.getItem(cacheKey) || "");
       updateObj =  {
-        name: "Cielo",
+        name: userInfo?.name || '',
         value:input.value,
         time: new Date().toLocaleString()
       }

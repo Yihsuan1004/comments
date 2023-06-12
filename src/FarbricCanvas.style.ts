@@ -1,6 +1,4 @@
-import styled from '@emotion/styled'
-
-
+import styled from '@emotion/styled';
 
 export const ToolBar = styled.div((props: any)=>({
     position: 'absolute',
