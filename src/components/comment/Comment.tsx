@@ -1,5 +1,5 @@
 import { CommentContainer } from './Comment.style';
-import  Submit from '../icon/icon_submit.svg';
+import  Submit from '../../assets/icon/icon_submit.svg';
 
 const Comment: React.FC<any> = (
   {onAddComment,onChange,onKeyDown,disabled,top,left}

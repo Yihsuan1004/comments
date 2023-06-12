@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { PositionProps } from '../interface';
+import { PositionProps } from '../../interface';
 
 
 

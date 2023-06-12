@@ -1,56 +1,60 @@
 import React, { useRef, useEffect, useState, ChangeEvent } from 'react';
-import { fabric } from 'fabric';
-import './FabricCanvas.css';
-import Dialog from './dialog/Dialog';
-import Comment from './comment/Comment';
-import CommentMode from './icon/icon_comment_mode.svg';
-import MoveMode from './icon/icon_move_mode.svg';
-import AddImage from './icon/icon_add_image.svg';
 
-import { CommentPanel, DialogConfig, UserInfo } from './interface';
-import { CommentImage, CustomImage } from './class';
+// Fabric
+import { fabric } from 'fabric';
 import { Point } from 'fabric/fabric-impl';
-import { Avatar, ButtonContainer, FlexContainer, Header, ModeButton, ToolBar, UserContainer, UserName } from './FarbricCanvas.style';
+
+// Components
+import Dialog from '../dialog/Dialog';
+import Comment from '../comment/Comment';
+
+// Icons
+import CommentMode from '../../assets/icon/icon_comment_mode.svg';
+import MoveMode from '../../assets/icon/icon_move_mode.svg';
+import AddImage from '../../assets/icon/icon_add_image.svg';
+
+// Constants
+import { DefaultUserInfo, commentOffsetX } from '../../constant';
+
+// Classes
+import { CommentPanel, DialogConfig, UserInfo } from '../../interface';
+import { CommentImage, CustomImage } from '../../class';
+
+import { Avatar, ButtonContainer, FlexContainer, Header, ModeButton, ToolBar, UserContainer, UserName } from './CommentCanvas.style';
 import { Tooltip } from 'react-tooltip'
 
 
-const DefaultUserInfo: UserInfo = {
-  name: "Yihsuan Hung"
-}
-
-const commentOffsetX = 12;
-
 const FabricCanvas: React.FC = () => {
 
-
-  const [dialog, setDialog] = useState<DialogConfig>({ show: false});
-  const [mode, setMode] = useState<string>('move');
-  const [image, setImage] = useState<CustomImage | null>(null);
-  const [disabled,setDisabled] = useState<boolean>(true);
-  const [userInfo,setUserInfo] = useState<UserInfo | null>(null);
-
-  const [isCommentCreated, setCommentCreated] = useState<boolean>(false);
-  const [isComplete, setCompleted] = useState<boolean>(false);
-  const [currentSelect, setCurrentSelect] = useState<CustomImage | CommentImage | null>(null);
-  const [init,setInit] =  useState<boolean>(false);
-  const [isInsideObject,setInsideObject] =  useState<boolean>(false);
-
-
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasInstance = useRef<fabric.Canvas | null>(null);
-  const dialogRef = useRef<DialogConfig>(dialog);
-  const currentSelectRef = useRef<CustomImage | CommentImage | null>(currentSelect);
-  const insideObjectRef = useRef<boolean>(isInsideObject);
-  const modeRef = useRef<string>(mode);
+  const [userInfo,setUserInfo] = useState<UserInfo | null>(null);  // State for storing user information
+  const [mode, setMode] = useState<string>('move'); // State for managing the mode (e.g., move, comment.)
+  const [image, setImage] = useState<CustomImage | null>(null); // State for storing image which is click to create comment.
+  const [dialog, setDialog] = useState<DialogConfig>({ show: false}); // State for managing dialog configuration
+  const [disabled, setDisabled] = useState<boolean>(true); // State for managing the disabled state of a comment component.
+  const [isCommentCreated, setCommentCreated] = useState<boolean>(false); // State for tracking whether a comment has been created.
+  const [isComplete, setCompleted] = useState<boolean>(false); // State for tracking whether a comment has been created completly.
+  const [currentSelect, setCurrentSelect] = useState<CustomImage | CommentImage | null>(null); // State for storing currently selected image or comment
+  const [init, setInit] =  useState<boolean>(false); // State for tracking initialization status.
+  const [isInsideObject, setInsideObject] =  useState<boolean>(false); // State for tracking whether an object is inside another.
+  const [counter, setCounter] = useState(1); // State for storing serialNumber.
 
 
-  const [counter, setCounter] = useState(1);
+  const canvasRef = useRef<HTMLCanvasElement>(null); // Reference to a canvas element
+  const canvasInstance = useRef<fabric.Canvas | null>(null); // Reference to the fabric.js canvas instance
+  const dialogRef = useRef<DialogConfig>(dialog); // Reference to the dialog configuration
+  const currentSelectRef = useRef<CustomImage | CommentImage | null>(currentSelect); // Reference to the currently selected image or comment
+  const insideObjectRef = useRef<boolean>(isInsideObject); // Reference to the insideObject state
+  const modeRef = useRef<string>(mode); // Reference to the mode state
+
+  const {show ,cacheKey, comments , top , left,} = dialog;
+
 
   const generateSerialNumber = (): string => {
     const serialNumber = `SN-${counter}`;
     setCounter((prevCounter: number) => prevCounter + 1);
     return(serialNumber);
   };
+
 
   const handleBeforeMousedown = (event:fabric.IEvent):void => {
 
@@ -66,12 +70,14 @@ const FabricCanvas: React.FC = () => {
 
       // Check if the click was inside an object
       const isInsideObject = target !== null && target !== undefined && target.imgType === 'comment';
-      console.log('insideObjectRef',isInsideObject);
 
-      setInsideObject(isInsideObject); // Update the state value
+      // Update the state value
+      setInsideObject(isInsideObject); 
+
       insideObjectRef.current = isInsideObject;
     }
   }
+
 
   const handleMousedown = (event:fabric.IEvent): void => {
     console.log('object click',event.target);
@@ -115,6 +121,7 @@ const FabricCanvas: React.FC = () => {
     }
   };
 
+
   const createComment = (canvas:fabric.Canvas, pointer: any, event:fabric.IEvent) => {
     fabric.Image.fromURL('/img/icon_comment_create.svg', function(cmImg:CommentImage) {
       cmImg.hasControls = false;
@@ -147,9 +154,12 @@ const FabricCanvas: React.FC = () => {
         cmImg.isFirstSelected = true;
         const target = event.target as CommentImage;
         cmImg.opacity = 0.7;
+        
         if(target.cacheKey){
-          setCompleted(true);
+
           setCommentCreated(true);
+
+          setCompleted(true);
 
           const comments  = JSON.parse(sessionStorage.getItem(target.cacheKey) || "[]");
 
@@ -163,10 +173,11 @@ const FabricCanvas: React.FC = () => {
         }
       
         setCurrentSelect(cmImg);
+      
       });
   
 
-      cmImg.on('deselected', (event) => {
+      cmImg.on('deselected', () => {
         cmImg.opacity = 1;
         cmImg.isFirstSelected = false;
 
@@ -181,7 +192,7 @@ const FabricCanvas: React.FC = () => {
       });
 
 
-      cmImg.on('moving',(event)=>{
+      cmImg.on('moving',()=>{
 
         cmImg.isMoved = true;
 
@@ -196,12 +207,14 @@ const FabricCanvas: React.FC = () => {
     });
   }
 
+
   const removeObject = (obj: fabric.Object | CommentImage | null) => {
     if(!obj) return;
     const canvas = canvasInstance.current as fabric.Canvas;
     if(canvas) canvas.remove(obj);
     resetComment();
   }
+
 
   const resetComment = () =>{
     setCompleted(false);
@@ -282,6 +295,7 @@ const FabricCanvas: React.FC = () => {
     }
   }
 
+
   const handleCommentKeydown = (event: KeyboardEvent)=> {
     
     const comment : CommentPanel = {
@@ -300,6 +314,7 @@ const FabricCanvas: React.FC = () => {
       resetComment();
     }
   }
+
 
   const createCommentThread = (cmImg:CommentImage,comment: CommentPanel) =>{
     //Key to get current comment's val.
@@ -328,8 +343,9 @@ const FabricCanvas: React.FC = () => {
     });
   }
 
+
   /** handle delete threads */
-  const handleDeleteDialog = () =>{
+  const handleResolveDialog = () =>{
     const canvas = canvasInstance.current as fabric.Canvas;
     const activeObj = canvas.getActiveObject() as CustomImage | CommentImage;
     if(activeObj) {
@@ -340,6 +356,7 @@ const FabricCanvas: React.FC = () => {
       sessionStorage.removeItem(activeObj.cacheKey as string);
     };
   }
+
 
   const updateComments = (oImg:CustomImage) =>{
 
@@ -404,8 +421,8 @@ const FabricCanvas: React.FC = () => {
     const canvas = canvasInstance.current as fabric.Canvas;
 
     fabric.Image.fromURL('/img/cat.png', function(oImg:CustomImage) {
-      oImg.left = 100;
-      oImg.top = 100;
+      oImg.left = 200;
+      oImg.top = 200;
       oImg.hasBorders = true;
       oImg.hasControls = false;
       oImg.imgType = 'picture';
@@ -449,7 +466,6 @@ const FabricCanvas: React.FC = () => {
     }
   }
 
- 
 
   useEffect(() => {
     dialogRef.current = dialog;
@@ -471,8 +487,6 @@ const FabricCanvas: React.FC = () => {
     const selectable =  modeRef.current === 'move';
 
     const imgs = (canvas?.getObjects())?.filter((obj:any)=> obj.imgType === 'picture') || [];
-
-    console.log(imgs);
 
     if(imgs.length > 0){
       imgs.forEach(img =>{
@@ -504,21 +518,28 @@ const FabricCanvas: React.FC = () => {
 
  
   useEffect(() => {
+  
+    const getWindowDimensions = () => {
+      const { innerWidth: width, innerHeight: height } = window;
+      return { width, height };
+    };
 
     const initFabric = () =>{
       const canvas = new fabric.Canvas(canvasRef.current);
       canvasInstance.current = canvas;
   
-      // Add your Fabric.js code here
-      canvas.width = 1400;
-      canvas.height = 800;
+      const { width, height } = getWindowDimensions();
+
+      canvas.setWidth(width);
+      canvas.setHeight(height);
       canvas.preserveObjectStacking = true;
-      
     }
+
 
     const disposeFabric = () =>{
       canvasInstance.current?.dispose();
     }
+
 
     const getUserInfo = () =>{
       const user = DefaultUserInfo;
@@ -527,16 +548,13 @@ const FabricCanvas: React.FC = () => {
 
 
     if (canvasRef.current) {
-      console.log('init'); //ERROR: it will execute twice.
-
       initFabric();
 
       getUserInfo();
 
-      document.addEventListener('keydown',handleKeyDown);
-
-      // Add event listener to track if the mousedown event is inside an object
       setInit(true);
+
+      document.addEventListener('keydown',handleKeyDown);
 
       return(()=>{
         document.removeEventListener('keydown',handleKeyDown);
@@ -547,7 +565,6 @@ const FabricCanvas: React.FC = () => {
   }, []);
 
 
-  const {show ,cacheKey, comments , top , left,} = dialog;
   
   return (
     <>
@@ -556,7 +573,7 @@ const FabricCanvas: React.FC = () => {
         {
           show 
           && 
-          <Dialog onResolve = {handleDeleteDialog}
+          <Dialog onResolve = {handleResolveDialog}
                   onClose = {() => setDialog({...dialog , show: false})} 
                   top = {top} 
                   left = {(left || 0) + commentOffsetX}

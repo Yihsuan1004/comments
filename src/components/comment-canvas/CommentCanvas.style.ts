@@ -1,8 +1,6 @@
 import styled from '@emotion/styled';
 
 
-
-
 export const ToolBar = styled.div((props: any)=>({
     position: 'absolute',
     top: '0',
@@ -21,10 +19,12 @@ export const Header = styled.div({
   backgroundColor: '#4553D4',
 });
 
+
 export const FlexContainer = styled.div({
   display: 'flex',
   alignItems: 'center'
-})
+});
+
 
 export const UserContainer = styled.div({
   display: 'flex',
@@ -40,7 +40,8 @@ export const UserContainer = styled.div({
   }
 });
 
-export  const Avatar =  styled.div({
+
+export  const Avatar = styled.div({
   marginRight: '12px',
   width: '30px',
   height: '30px',
@@ -48,9 +49,10 @@ export  const Avatar =  styled.div({
   lineHeight: '30px',
   textAlign: 'center',
   backgroundColor: '#d0118b',
-})
+});
 
-export  const UserName =  styled.div({
+
+export  const UserName = styled.div({
   width: '160px',
   minWidth: '160px',
   height: '30px',
@@ -58,10 +60,10 @@ export  const UserName =  styled.div({
   textAlign: 'left',
   fontWeight: '700',
   backgroundColor: '#4553D4',
-})
+});
 
 
-export const ButtonContainer =  styled.div({
+export const ButtonContainer = styled.div({
   display: 'flex',
   alignItems: 'center',
   flexDirection: 'column',
@@ -79,7 +81,7 @@ export const ButtonContainer =  styled.div({
       backgroundColor: '#333',
     },
   }
-})
+});
 
 
 export const ModeButton = styled.button((props: any)=>({
@@ -103,4 +105,4 @@ export const ModeButton = styled.button((props: any)=>({
   img: {
     width:'28px'
   }
-}))
+}));

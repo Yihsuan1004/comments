@@ -2,14 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import FabricCanvas from './FabricCanvas';
+import CommentCanvas from './components/comment-canvas/CommentCanvas';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <FabricCanvas />
+    <CommentCanvas />
   </React.StrictMode>
 );
 

@@ -1,11 +1,13 @@
 import React, { useEffect, useState, ChangeEvent } from 'react';
-import { DialogProps, CommentPanel } from '../interface';
-import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, DialogToolBar } from './Dialog.style';
-import '../comment/Comment';
-import Comment from '../comment/Comment';
-import  Resolve from '../icon/icon_resolve.svg';
-import  Close from '../icon/icon_close.svg';
 import { Tooltip } from 'react-tooltip'
+
+import { DialogProps, CommentPanel } from '../../interface';
+import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, DialogToolBar } from './Dialog.style';
+import Comment from '../comment/Comment';
+
+// Icons
+import  Resolve from '../../assets/icon/icon_resolve.svg';
+import  Close from '../../assets/icon/icon_close.svg';
 
 
 const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cacheKey,userInfo}) => {
@@ -37,8 +39,15 @@ const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cach
       ...(thread || []),
       updateObj
     ]);
-    input.value = "";
+    resetInput();
   }
+
+
+  const resetInput  = () =>{
+    const input = document.getElementById('comment_input') as HTMLInputElement;
+    input.value = "";
+    setDisabled(true);
+  } 
 
   const handleKeyDown = (event: KeyboardEvent)=>{
     const target = event.target as HTMLInputElement;
@@ -48,7 +57,6 @@ const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cach
   }
 
   const onTypeText = (event:ChangeEvent | KeyboardEvent) => {
-
     const val = (event.target as HTMLInputElement).value;
     if(val && val.length > 0){
       setDisabled(false);
