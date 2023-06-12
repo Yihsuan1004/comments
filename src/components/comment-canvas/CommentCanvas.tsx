@@ -123,7 +123,7 @@ const FabricCanvas: React.FC = () => {
 
 
   const createComment = (canvas:fabric.Canvas, pointer: any, event:fabric.IEvent) => {
-    fabric.Image.fromURL('/img/icon_comment_create.svg', function(cmImg:CommentImage) {
+    fabric.Image.fromURL(`${process.env.PUBLIC_URL}/icon_comment_create.svg`, function(cmImg:CommentImage) {
       cmImg.hasControls = false;
       cmImg.hasBorders = false;
       cmImg.originY = 'bottom';
@@ -154,7 +154,7 @@ const FabricCanvas: React.FC = () => {
         cmImg.isFirstSelected = true;
         const target = event.target as CommentImage;
         cmImg.opacity = 0.7;
-        
+
         if(target.cacheKey){
 
           setCommentCreated(true);
@@ -323,7 +323,7 @@ const FabricCanvas: React.FC = () => {
 
     //Update the icon source that represents a successful creation.
     const canvas = canvasInstance.current as fabric.Canvas;
-    cmImg.setSrc('/img/icon_comment.svg', ()=> canvas.renderAll());
+    cmImg.setSrc(`${process.env.PUBLIC_URL}/icon_comment.svg`, ()=> canvas.renderAll());
     
     //If user click image to creat comment.
     if(image){
@@ -420,7 +420,7 @@ const FabricCanvas: React.FC = () => {
   const addImage = () =>{
     const canvas = canvasInstance.current as fabric.Canvas;
 
-    fabric.Image.fromURL('/img/cat.png', function(oImg:CustomImage) {
+    fabric.Image.fromURL(`${process.env.PUBLIC_URL}/cat.png`, function(oImg:CustomImage) {
       oImg.left = 200;
       oImg.top = 200;
       oImg.hasBorders = true;
