@@ -10,7 +10,7 @@ import AddImage from './icon/icon_add_image.svg';
 import { CommentPanel, DialogConfig, UserInfo } from './interface';
 import { CommentImage, CustomImage } from './class';
 import { Point } from 'fabric/fabric-impl';
-import { ToolBar } from './FarbricCanvas.style';
+import { Avatar, ButtonContainer, FlexContainer, Header, ModeButton, ToolBar, UserContainer, UserName } from './FarbricCanvas.style';
 import { Tooltip } from 'react-tooltip'
 
 
@@ -449,7 +449,7 @@ const FabricCanvas: React.FC = () => {
     }
   }
 
-
+ 
 
   useEffect(() => {
     dialogRef.current = dialog;
@@ -574,26 +574,39 @@ const FabricCanvas: React.FC = () => {
                    onChange={(event: ChangeEvent | KeyboardEvent) => onTypeText(event)}
                    onKeyDown={(event:KeyboardEvent) => handleCommentKeydown(event)}/>
         }
-        <ToolBar mode={mode}>
-          <button onClick={() => handleChangeMode('move')}>
-            <img src={MoveMode} alt="comment mode" />
-            <span>Move mode</span>
-          </button>
-          <button onClick={() => handleChangeMode('comment')}>
-            <img src={CommentMode} alt="comment mode" />
-            <span>Comment mode</span>
-          </button>
-          <button onClick={addImage} disabled={mode === 'comment'}>
-            <img src={AddImage} alt="comment mode" />
-            <span>add Image</span>
-          </button>
+        <ToolBar>
+          <Header>
+            <UserContainer>
+              <FlexContainer id="clickable">
+                <Avatar>{(userInfo?.name || 'A')[0] }</Avatar>
+                <UserName>{userInfo?.name}</UserName>
+              </FlexContainer>
+              <Tooltip anchorSelect="#clickable" clickable noArrow>
+                <ButtonContainer>
+                  <button onClick={()=> handleChangeUser('Yihsuan Hung')}>Yihsuan Hung</button>
+                  <button onClick={()=> handleChangeUser('Ava Mitchell')}>Ava Mitchell</button>
+                  <button onClick={()=> handleChangeUser('Harper Reynolds')}>Harper Reynolds</button>
+                </ButtonContainer>
+              </Tooltip>
+            </UserContainer>
+          </Header>
           <div>
-            <div id="clickable">{userInfo?.name}</div>
-            <Tooltip anchorSelect="#clickable" clickable>
-              <button onClick={()=> handleChangeUser('Yihsuan Hung')}>Yihsuan Hung</button>
-              <button onClick={()=> handleChangeUser('Ava Mitchell')}>Ava Mitchell</button>
-              <button onClick={()=> handleChangeUser('Harper Reynolds')}>Harper Reynolds</button>
-            </Tooltip>
+            <ModeButton mode={mode} onClick={() => handleChangeMode('move')}>
+              <img src={MoveMode} alt="move mode" />
+              <div>Move Mode</div>
+            </ModeButton>
+            <ModeButton mode={mode} onClick={() => handleChangeMode('comment')}>
+              <img src={CommentMode} alt="comment mode" />
+              <div>Comment Mode</div>
+            </ModeButton>
+            {
+              mode === 'move' &&
+              <ModeButton onClick={addImage}>
+                <img src={AddImage} alt="comment mode" />
+                <div>add Image</div>
+              </ModeButton>
+            }
+          
           </div>
         </ToolBar>
       </div>
