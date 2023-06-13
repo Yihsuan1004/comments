@@ -394,12 +394,14 @@ const CommentCanvas: React.FC = () => {
    */
   const handleCommentClick = (event:MouseEvent) =>{
     //Creates a CommentPanel object based on the event and user information.
+    const input = document.getElementById('comment_input') as HTMLInputElement;
+    
     const comment : CommentPanel = {
       name: userInfo?.name || '',
-      value: (event.target as HTMLInputElement).value,
+      value: input.value,
       time: new Date().toLocaleString()
     } ;
-    
+
     if(comment.value !== ''){
       setCompleted(true);
       if(currentSelect) createCommentThread(currentSelect as CommentImage,comment);
