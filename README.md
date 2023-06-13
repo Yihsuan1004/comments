@@ -1,12 +1,11 @@
 # Comments Project
 This project is designed to provide users with the ability to add comments to a page that includes a canvas. The canvas displays static images, and users can interact with the canvas to add comments anywhere on the image.
 
----
+
 ## Demo
-Here is demo :
+Here is a demo:
 https://yihsuan1004.github.io/comments/
 
----
 ## Features
 The Comment System project includes the following features:
 ### 1. Multiple Images: 
