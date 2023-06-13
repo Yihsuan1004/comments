@@ -1,24 +1,31 @@
 import React, { useEffect, useState, ChangeEvent } from 'react';
 import { Tooltip } from 'react-tooltip'
-
 import { DialogProps, CommentPanel } from '../../interface';
-import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, DialogToolBar } from './Dialog.style';
+
+//Components
 import Comment from '../comment/Comment';
 
+//Style-components
+import { DialogContainer, DialogContent, UserInfo, UserName,UserTime,UserComment, DialogToolBar } from './Dialog.style';
+
 // Icons
-import  Resolve from '../../assets/icon/icon_resolve.svg';
-import  Close from '../../assets/icon/icon_close.svg';
+import Resolve from '../../assets/icon/icon_resolve.svg';
+import Close from '../../assets/icon/icon_close.svg';
 
 
 const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cacheKey,userInfo}) => {
   
-  const [thread,setThread] = useState<DialogProps["comments"]>(comments || []);
-  const [disabled,setDisabled] = useState<boolean>(true);
+  const [thread,setThread] = useState<DialogProps["comments"]>(comments || []); // State for managing the thread of comments
+  const [disabled,setDisabled] = useState<boolean>(true); // State for managing the disabled state of a comment component
 
   useEffect(() => {
     setThread(comments || []);
   }, [comments]);
  
+  /**
+   * This function is called when a comment is added.
+   * It retrieves the input element for the comment text and updates the comment thread and storage accordingly.
+   */
   const onAddComment = () => {
     const input = document.getElementById('comment_input') as HTMLInputElement;
 
@@ -42,12 +49,16 @@ const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cach
     resetInput();
   }
 
-
+  /**
+   * Reset the comment input.
+   * It clears the input value and disables the comment submission button.
+   */
   const resetInput  = () =>{
     const input = document.getElementById('comment_input') as HTMLInputElement;
     input.value = "";
     setDisabled(true);
   } 
+
 
   const handleKeyDown = (event: KeyboardEvent)=>{
     const target = event.target as HTMLInputElement;
@@ -56,6 +67,12 @@ const Dialog: React.FC<DialogProps> = ({onClose,onResolve,top,left,comments,cach
     }
   }
 
+
+  /**
+   * Triggered when there is a change in the input text.
+   * It checks the value of the input text and enables or disables the "disabled" state based on the length of the value.
+   * @param event - The event object containing the input element.
+   * */
   const onTypeText = (event:ChangeEvent | KeyboardEvent) => {
     const val = (event.target as HTMLInputElement).value;
     if(val && val.length > 0){

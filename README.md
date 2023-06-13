@@ -1,46 +1,27 @@
-# Getting Started with Create React App
+# Comments Project
+This project is designed to provide users with the ability to add comments to a page that includes a canvas. The canvas displays static images, and users can interact with the canvas to add comments anywhere on the image.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+---
+## Demo
+Here is demo :
+https://yihsuan1004.github.io/comments/
 
-## Available Scripts
+---
+## Features
+The Comment System project includes the following features:
+### 1. Multiple Images: 
+The canvas can display more than one image, allowing users to interact with and comment on different images.
+### 2. Comment Thread: 
+Users can start a comment thread anywhere on the canvas. Clicking on the displayed image adds a new comment marker to the canvas and opens the comment dialog.
+### 3. Comment Marker Position: 
+Comment markers exist in the canvas and retain their position relative to the displayed image, regardless of pan and zoom settings.
 
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 4. Attachment to Images: 
+If comments are placed on a specific image, they are attached to that image. If the image is moved or removed, all comments associated with it move accordingly.
+### 5. Comment Dialog: 
+The comment dialog is implemented outside of the canvas using React. The dialog includes a thread of comments and a field to add a new comment. It can also be closed.
+### 6. Comment Display: 
+Comments in the system display the following information:
+1. Content of the comment
+2. Time the comment was posted
+3. Username of the comment author
