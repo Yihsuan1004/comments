@@ -47,7 +47,7 @@ const CommentCanvas: React.FC = () => {
   const dialogRef = useRef<DialogConfig>(dialog); // Reference to the dialog configuration
   const currentSelectRef = useRef<CustomImage | CommentImage | null>(currentSelect); // Reference to the currently selected image or comment
   const insideObjectRef = useRef<boolean>(isInsideObject); // Reference to the insideObject state
-  const modeRef = useRef<string>(mode); // Reference to the mode state
+  const modeRef = useRef<ModeType>(mode); // Reference to the mode state
   const isCompleteRef = useRef<boolean>(isComplete); // Reference to the isComplete state
   const isCommentCreatedRef = useRef<boolean>(isCommentCreated); // Reference to the isComplete state
 
@@ -676,7 +676,7 @@ const CommentCanvas: React.FC = () => {
   return (
     <>
       <div id="canvas-container">
-        <canvas ref={canvasRef} />
+        <canvas data-testid="comment-canvas" ref={canvasRef} />
         {
           show 
           && 
@@ -716,11 +716,11 @@ const CommentCanvas: React.FC = () => {
             </UserContainer>
           </Header>
           <div>
-            <ModeButton mode={mode} onClick={() => handleChangeMode(Mode.move)}>
+            <ModeButton data-testid="move-mode-button" mode={mode} onClick={() => handleChangeMode(Mode.move)}>
               <img src={MoveMode} alt="move mode" />
               <div>Move Mode</div>
             </ModeButton>
-            <ModeButton mode={mode} onClick={() => handleChangeMode(Mode.comment)}>
+            <ModeButton data-testid="comment-mode-button"  mode={mode} onClick={() => handleChangeMode(Mode.comment)}>
               <img src={CommentMode} alt="comment mode" />
               <div>Comment Mode</div>
             </ModeButton>
